@@ -1,7 +1,7 @@
 {
-  "name": "OX 퀴즈 - 공통수학2",
-  "short_name": "OX퀴즈",
-  "description": "공통수학2 OX 퀴즈 애플리케이션",
+  "name": "구두테스트 - 대수",
+  "short_name": "구두테스트",
+  "description": "대수 구두테스트 애플리케이션",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
