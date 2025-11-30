@@ -169,15 +169,64 @@
 
     // 카테고리 데이터
     const categories = [
-      { 
-        id: 1, 
-        name: "Chapter 1. 지수함수와 로그함수", 
+      {
+        id: 1,
+        name: "Chapter 1. 지수함수와 로그함수",
         parts: [
-          { id: 1, name: "Part 1. 거듭제곱근과 지수법칙", questions: [] },
-          { id: 2, name: "Part 2. 지수의 확장과 지수법칙", questions: [] },
-          { id: 3, name: "Part 3. 로그의 뜻과 성질", questions: [] },
-          { id: 4, name: "Part 4. 상용로그", questions: [] }
-        ] 
+          {
+            id: 1,
+            name: "Part 1. 거듭제곱근과 지수법칙",
+            questions: [
+              { question: "n이 2 이상의 자연수일 때, <span class='katex'><span class='katex-mathml'><math xmlns='http://www.w3.org/1998/Math/MathML'><semantics><mrow><msup><mi>a</mi><mi>n</mi></msup><mo>=</mo><mi>b</mi></mrow><annotation encoding='application/x-tex'>a^n=b</annotation></semantics></math></span></span>를 만족하는 실수 a를 b의 n제곱근이라 한다.", answer: "O", hint: "n제곱근의 정의를 생각해보세요.", explanation: "n제곱근의 정의는 a^n=b를 만족하는 a입니다." },
+              { question: "모든 실수는 홀수 제곱근을 가진다.", answer: "X", hint: "음수의 짝수 제곱근을 생각해보세요.", explanation: "음수는 짝수 제곱근이 없지만 홀수 제곱근은 있습니다. 하지만 '모든 실수'라고 했으므로, 음수의 짝수 제곱근이 없어서 거짓입니다." },
+              { question: "양수는 서로 다른 두 개의 짝수 제곱근을 가진다.", answer: "O", hint: "예: 4의 제곱근은?", explanation: "양수의 짝수 제곱근은 절댓값이 같고 부호가 반대인 두 개가 있습니다. 예: 4의 제곱근은 2와 -2입니다." },
+              { question: "√16 = ±4 이다.", answer: "X", hint: "√의 정의를 생각해보세요.", explanation: "√16 = 4입니다. ±를 붙이지 않습니다. 16의 제곱근은 ±4이지만, √16은 양의 제곱근만을 의미합니다." },
+              { question: "a<0일 때, ³√a < 0이다.", answer: "O", hint: "음수의 홀수 제곱근을 생각해보세요.", explanation: "음수의 홀수 제곱근은 음수입니다." },
+              { question: "ⁿ√a^n = a (n은 자연수)이다.", answer: "X", hint: "n이 짝수이고 a<0인 경우를 생각해보세요.", explanation: "n이 짝수일 때 ⁿ√a^n = |a|입니다. n이 홀수일 때만 ⁿ√a^n = a입니다." },
+              { question: "(ⁿ√a)^n = a (n은 자연수, a≥0)이다.", answer: "O", hint: "거듭제곱근의 성질을 생각해보세요.", explanation: "a≥0일 때 (ⁿ√a)^n = a가 성립합니다." }
+            ]
+          },
+          {
+            id: 2,
+            name: "Part 2. 지수의 확장과 지수법칙",
+            questions: [
+              { question: "a^0 = 1 (a≠0)이다.", answer: "O", hint: "0 지수의 정의를 생각해보세요.", explanation: "0이 아닌 모든 수의 0제곱은 1입니다." },
+              { question: "0^0 = 1이다.", answer: "X", hint: "0^0은 정의되지 않습니다.", explanation: "0^0은 수학적으로 정의되지 않거나 문맥에 따라 다르게 정의됩니다." },
+              { question: "a^(-n) = 1/a^n (a≠0, n은 자연수)이다.", answer: "O", hint: "음의 지수의 정의를 생각해보세요.", explanation: "음의 지수는 역수를 의미합니다." },
+              { question: "a^(m+n) = a^m + a^n이다.", answer: "X", hint: "지수법칙을 정확히 생각해보세요.", explanation: "a^(m+n) = a^m × a^n입니다. 덧셈이 아니라 곱셈입니다." },
+              { question: "(a^m)^n = a^(m×n)이다.", answer: "O", hint: "거듭제곱의 거듭제곱을 생각해보세요.", explanation: "거듭제곱의 거듭제곱은 지수를 곱합니다." },
+              { question: "(ab)^n = a^n × b^n이다.", answer: "O", hint: "곱의 거듭제곱을 생각해보세요.", explanation: "곱의 거듭제곱은 각각의 거듭제곱의 곱과 같습니다." },
+              { question: "a^(1/n) = ⁿ√a (a>0, n은 자연수)이다.", answer: "O", hint: "분수 지수의 의미를 생각해보세요.", explanation: "분수 지수 1/n은 n제곱근을 의미합니다." }
+            ]
+          },
+          {
+            id: 3,
+            name: "Part 3. 로그의 뜻과 성질",
+            questions: [
+              { question: "log_a b = c ⟺ a^c = b (a>0, a≠1, b>0)이다.", answer: "O", hint: "로그의 정의를 생각해보세요.", explanation: "로그의 정의는 지수 형태와 동치입니다." },
+              { question: "log_2 8 = 3이다.", answer: "O", hint: "2^3 = 8인지 확인해보세요.", explanation: "2^3 = 8이므로 log_2 8 = 3입니다." },
+              { question: "log_a 1 = 0 (a>0, a≠1)이다.", answer: "O", hint: "a^0 = ?", explanation: "a^0 = 1이므로 log_a 1 = 0입니다." },
+              { question: "log_a a = 1 (a>0, a≠1)이다.", answer: "O", hint: "a^1 = ?", explanation: "a^1 = a이므로 log_a a = 1입니다." },
+              { question: "log_a (MN) = log_a M + log_a N이다.", answer: "O", hint: "로그의 곱셈 법칙을 생각해보세요.", explanation: "로그의 곱셈은 덧셈으로 변환됩니다." },
+              { question: "log_a (M/N) = log_a M - log_a N이다.", answer: "O", hint: "로그의 나눗셈 법칙을 생각해보세요.", explanation: "로그의 나눗셈은 뺄셈으로 변환됩니다." },
+              { question: "log_a M^k = k × log_a M이다.", answer: "O", hint: "로그의 거듭제곱 법칙을 생각해보세요.", explanation: "로그의 거듭제곱은 계수로 내려옵니다." },
+              { question: "밑변환 공식: log_a b = log_c b / log_c a이다.", answer: "O", hint: "밑을 변환하는 공식을 생각해보세요.", explanation: "밑변환 공식을 사용하면 다른 밑으로 변환할 수 있습니다." }
+            ]
+          },
+          {
+            id: 4,
+            name: "Part 4. 상용로그",
+            questions: [
+              { question: "상용로그는 밑이 10인 로그이다.", answer: "O", hint: "상용로그의 정의를 생각해보세요.", explanation: "상용로그 log는 log_10을 의미합니다." },
+              { question: "log 1000 = 3이다.", answer: "O", hint: "10^3 = ?", explanation: "10^3 = 1000이므로 log 1000 = 3입니다." },
+              { question: "log 0.01 = -2이다.", answer: "O", hint: "0.01 = 10^?", explanation: "0.01 = 10^(-2)이므로 log 0.01 = -2입니다." },
+              { question: "log 5 = 1 - log 2이다.", answer: "O", hint: "5 × 2 = 10을 이용해보세요.", explanation: "log 2 + log 5 = log 10 = 1이므로 log 5 = 1 - log 2입니다." },
+              { question: "자연수 N의 자릿수는 log N의 정수부분 + 1이다.", answer: "O", hint: "log의 지표를 생각해보세요.", explanation: "log N의 정수부분(지표) + 1이 자릿수입니다." },
+              { question: "log 2 ≈ 0.3010이면 log 20 ≈ 1.3010이다.", answer: "O", hint: "log 20 = log (2 × 10)을 계산해보세요.", explanation: "log 20 = log 2 + log 10 = 0.3010 + 1 = 1.3010입니다." },
+              { question: "0 < a < 1일 때, log a < 0이다.", answer: "O", hint: "1보다 작은 수의 로그를 생각해보세요.", explanation: "0과 1 사이의 수는 음의 로그값을 가집니다." }
+            ]
+          }
+        ]
       },
       { 
         id: 2, 
@@ -1515,10 +1564,10 @@
                     ` : ''}
                     
                     <div class="flex items-start justify-between mb-4">
-                      <h3 class="text-base font-bold text-white flex-1 pr-8">${part.name}</h3>
+                      <h3 class="text-base font-bold text-white flex-1 pr-8">${theme.name}</h3>
                     </div>
-                    
-                    <p class="text-xs text-gray-500 mb-4 font-semibold">${part.questions.length}개 문제</p>
+
+                    <p class="text-xs text-gray-500 mb-4 font-semibold">${theme.questions.length}개 문제</p>
                     
                     ${status.lastAttempt ? `
                       <div class="mb-4 p-4 bg-gray-800/50 rounded-xl border border-gray-700">
@@ -1599,7 +1648,7 @@
       }
       
       const part = category.parts.find(t => t.id === state.currentPart);
-      if (!theme || !part.questions) {
+      if (!part || !part.questions) {
         app.innerHTML = `<div class="min-h-screen flex items-center justify-center p-6"><p class="text-white">Part를 찾을 수 없습니다.</p></div>`;
         return;
       }
