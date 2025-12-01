@@ -555,7 +555,11 @@
       const category = categories.find(c => c.id === state.selectedCategory);
       const theme = category.chapters.find(t => t.id === state.currentTheme);
       const question = theme.questions[state.currentQuestion];
-      const isCorrect = selectedAnswer === question.answer;
+
+      // 서술형 문제 (answer가 빈 문자열)의 경우 O를 선택하면 맞은 것으로 처리
+      const isCorrect = question.answer === ""
+        ? selectedAnswer === "O"
+        : selectedAnswer === question.answer;
 
       const status = getThemeStatus(state.selectedCategory, state.currentTheme);
       const isRetake = status.attemptCount >= 1;
