@@ -18,17 +18,26 @@
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
   <style>
-    * { 
+    * {
       font-family: 'Noto Sans KR', sans-serif;
     }
     .icon { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; }
-    
-    /* 수식 렌더링 중에도 화면은 보이도록 */
+
+    /* 수식 깜빡임 방지: 초기 로딩 중에는 숨기고, 렌더링 완료 후 페이드인 */
     #app {
-      visibility: visible;
+      opacity: 0;
+      transition: opacity 0.3s ease-in;
+    }
+
+    #app.math-ready {
       opacity: 1;
     }
-    
+
+    /* 수식 렌더링 전 스타일 */
+    .katex {
+      visibility: visible;
+    }
+
     @media (hover: none) and (pointer: coarse) {
       * {
         -webkit-tap-highlight-color: transparent;
@@ -39,6 +48,11 @@
         border-color: inherit !important;
         box-shadow: inherit !important;
         transform: none !important;
+      }
+
+      /* 모바일에서는 transition 제거 */
+      #app {
+        transition: none !important;
       }
     }
   </style>
@@ -711,26 +725,34 @@
       renderMath();
     }
 
-    // KaTeX 렌더링 함수 (강력한 디바운싱)
+    // KaTeX 렌더링 함수 (최적화: 깜빡임 방지)
     let renderMathTimeout = null;
     let isRenderingMath = false;
-    let lastRenderTime = 0;
     let isFirstRender = true;
-    
+
     function renderMath() {
+      // 첫 렌더링은 즉시 실행 (깜빡임 방지)
+      if (isFirstRender) {
+        performMathRender();
+        return;
+      }
+
+      // 이후 렌더링은 디바운싱 적용
       if (renderMathTimeout) {
         clearTimeout(renderMathTimeout);
       }
 
       renderMathTimeout = setTimeout(() => {
-        if (isRenderingMath) return;
+        performMathRender();
+      }, 100);
+    }
 
-        const now = Date.now();
-        if (now - lastRenderTime < 100) return;
+    function performMathRender() {
+      if (isRenderingMath) return;
+      isRenderingMath = true;
 
-        isRenderingMath = true;
-        lastRenderTime = now;
-
+      // requestAnimationFrame으로 부드러운 렌더링
+      requestAnimationFrame(() => {
         try {
           if (typeof renderMathInElement !== 'undefined') {
             renderMathInElement(document.body, {
@@ -746,21 +768,29 @@
             console.log('✓ 수식 렌더링 완료');
           }
 
-          // 첫 렌더링 시 앱 즉시 표시
+          // 첫 렌더링 완료 후 앱 표시 (페이드인)
           if (isFirstRender) {
             const app = document.getElementById('app');
-            if (app && !app.classList.contains('ready')) {
-              app.classList.add('ready');
-              console.log('✓ 앱 표시');
+            if (app) {
+              // 렌더링 완료 직후 표시
+              requestAnimationFrame(() => {
+                app.classList.add('math-ready');
+                console.log('✓ 앱 표시 (깜빡임 없음)');
+              });
             }
             isFirstRender = false;
           }
         } catch (e) {
           console.error('수식 렌더링 오류:', e);
+          // 오류가 있어도 앱은 표시
+          const app = document.getElementById('app');
+          if (app) {
+            app.classList.add('math-ready');
+          }
         } finally {
           isRenderingMath = false;
         }
-      }, 50);
+      });
     }
 
     function renderLogin(app) {
