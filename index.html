@@ -228,7 +228,9 @@
       showAdminRegister: false,
       studentStatusFilter: 'active', // 'active' (재원생) 또는 'withdrawn' (퇴원생)
       // 학습 기록 전용
-      recordSelectedCategory: null // 학습 기록에서 선택한 카테고리
+      recordSelectedCategory: null, // 학습 기록에서 선택한 카테고리
+      // 선생님 메모
+      teacherNotes: {} // { themeId: { questionIndex: "메모 내용" } }
     };
 
     // 자동 로그인 체크
@@ -1557,7 +1559,7 @@
                           ${icon('lock', 'mr-2', 16)}${icon('clock', 'mr-1', 16)}<span data-lock-timer="${theme.id}">${minutes}:${seconds.toString().padStart(2, '0')} 후 재시험 가능</span>
                         </div>
                         <button data-review="${theme.id}" class="review-btn w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-xl font-bold text-white transition-all text-sm shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transform hover:scale-105 active:scale-95 flex items-center justify-center">
-                          ${icon('bookOpen', 'mr-2', 18)}힌트 복습하기
+                          ${icon('bookOpen', 'mr-2', 18)}복습하기
                         </button>
                       </div>
                     ` : status.status === 'retry' ? `
@@ -1702,18 +1704,18 @@
               
               ${answer ? `
                 <div class="p-5 rounded-xl border-2 ${answer.correct ? 'bg-green-900/20 border-green-500/50' : 'bg-red-900/20 border-red-500/50'}">
-                  <p class="font-bold text-sm mb-2" style="color: ${answer.correct ? '#4ade80' : '#f87171'}">
+                  <p class="font-bold text-sm mb-3" style="color: ${answer.correct ? '#4ade80' : '#f87171'}">
                     ${answer.correct ? '✓ 정답입니다!' : '✗ 오답입니다.'}
                   </p>
-                ${answer.correct ? `
-                  <p class="text-sm text-gray-300 leading-relaxed font-medium">
-                    <span class="text-green-400 font-bold">해설:</span> ${question.explanation}
-                  </p>
-                ` : `
-                  <p class="text-sm text-gray-300 leading-relaxed font-medium">
-                    <span class="text-orange-400 font-bold">💡 힌트:</span> ${question.hint}
-                  </p>
-                `}
+                  <div class="mt-3">
+                    <label class="text-sm text-gray-300 font-bold mb-2 block">📝 선생님 메모:</label>
+                    <textarea
+                      id="teacherNote-${state.currentQuestion}"
+                      class="w-full p-3 bg-gray-900/50 border border-gray-700 rounded-lg text-sm text-gray-300 focus:border-orange-500 focus:outline-none resize-none"
+                      rows="3"
+                      placeholder="이 문제에 대한 메모를 입력하세요..."
+                    >${state.teacherNotes?.[state.activeTheme]?.[state.currentQuestion] || ''}</textarea>
+                  </div>
                 </div>
               ` : ''}
             </div>
@@ -1809,6 +1811,17 @@
           btn.addEventListener('click', () => {
             handleAnswer(btn.dataset.answer);
           });
+        });
+      }
+
+      // 선생님 메모 저장
+      const teacherNoteTextarea = document.getElementById(`teacherNote-${state.currentQuestion}`);
+      if (teacherNoteTextarea) {
+        teacherNoteTextarea.addEventListener('input', (e) => {
+          if (!state.teacherNotes[state.activeTheme]) {
+            state.teacherNotes[state.activeTheme] = {};
+          }
+          state.teacherNotes[state.activeTheme][state.currentQuestion] = e.target.value;
         });
       }
     }
@@ -1934,38 +1947,24 @@
                                 <span class="flex items-center">
                                   ${icon('xCircle', 'mr-2', 18)}복습 필요 문제
                                 </span>
-                                ${isRetakeAvailable ? `
-                                  <span class="text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded font-bold">
-                                    재시험 전 복습!
-                                  </span>
-                                ` : ''}
                               </h4>
                               <div class="space-y-3">
                                 ${allWrongQuestions.map((wrongQ, idx) => {
                                   const questionData = theme.questions.find(q => q.question === wrongQ);
+                                  const questionIndex = theme.questions.indexOf(questionData);
+                                  const teacherNote = state.teacherNotes?.[theme.id]?.[questionIndex];
                                   return `
                                     <div class="text-sm bg-gray-900/50 rounded-lg p-3 border border-red-500/20">
                                       <p class="text-red-300 font-medium mb-2 leading-relaxed">• ${wrongQ}</p>
-                                      ${isRetakeAvailable ? `
-                                        <p class="text-gray-400 text-xs leading-relaxed">
-                                          <span class="text-orange-400 font-bold">💡 힌트:</span> ${questionData?.hint}
+                                      ${teacherNote ? `
+                                        <p class="text-gray-400 text-xs leading-relaxed mt-2 p-2 bg-gray-800/50 rounded">
+                                          <span class="text-blue-400 font-bold">📝 선생님 메모:</span> ${teacherNote}
                                         </p>
-                                      ` : `
-                                        <p class="text-gray-400 text-xs leading-relaxed">
-                                          <span class="text-green-400 font-bold">해설:</span> ${questionData?.explanation}
-                                        </p>
-                                      `}
+                                      ` : ''}
                                     </div>
                                   `;
                                 }).join('')}
                               </div>
-                              ${isRetakeAvailable ? `
-                                <div class="mt-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg text-center">
-                                  <p class="text-blue-400 text-xs font-bold">
-                                    ℹ️ 힌트 확인 후 재시험 도전! 재시험에서는 해설 제공
-                                  </p>
-                                </div>
-                              ` : ''}
                             </div>
                           ` : ''}
                         </div>
