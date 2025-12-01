@@ -1460,7 +1460,7 @@
         btn.addEventListener('click', () => {
           const catId = parseInt(btn.dataset.cat);
           const category = categories.find(c => c.id === catId);
-          if (category.chapters.length > 0) {
+          if (category && category.chapters && category.chapters.length > 0) {
             state.selectedCategory = catId;
             render();
           }
