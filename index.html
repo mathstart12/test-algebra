@@ -230,7 +230,11 @@
       // 학습 기록 전용
       recordSelectedCategory: null, // 학습 기록에서 선택한 카테고리
       // 선생님 메모
-      teacherNotes: {} // { themeId: { questionIndex: "메모 내용" } }
+      teacherNotes: {}, // { themeId: { questionIndex: "메모 내용" } }
+      // 타이머
+      questionTimer: 180, // 초 단위 (3분 = 180초)
+      timerInterval: null,
+      timerExpired: false
     };
 
     // 자동 로그인 체크
@@ -541,11 +545,60 @@
 
     function handleStartQuiz(themeId) {
       if (isLocked(state.selectedCategory, themeId)) return;
-      
+
       state.currentTheme = themeId;
       state.currentQuestion = 0;
       state.answers = {};
+      startQuestionTimer();
       render();
+    }
+
+    // 타이머 함수들
+    function startQuestionTimer() {
+      // 기존 타이머가 있으면 정리
+      if (state.timerInterval) {
+        clearInterval(state.timerInterval);
+      }
+
+      // 타이머 초기화 (3분 = 180초)
+      state.questionTimer = 180;
+      state.timerExpired = false;
+
+      // 1초마다 업데이트
+      state.timerInterval = setInterval(() => {
+        if (state.questionTimer > 0) {
+          state.questionTimer--;
+          updateTimerDisplay();
+        } else {
+          state.timerExpired = true;
+          clearInterval(state.timerInterval);
+          updateTimerDisplay();
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const timerElement = document.getElementById('questionTimer');
+      if (timerElement) {
+        const minutes = Math.floor(state.questionTimer / 60);
+        const seconds = state.questionTimer % 60;
+        const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+        if (state.timerExpired) {
+          timerElement.innerHTML = `<span class="text-red-400 font-bold">⏰ 시간 종료</span>`;
+        } else if (state.questionTimer <= 30) {
+          timerElement.innerHTML = `<span class="text-red-400 font-bold">⏱ ${timeString}</span>`;
+        } else {
+          timerElement.innerHTML = `<span class="text-gray-300">⏱ ${timeString}</span>`;
+        }
+      }
+    }
+
+    function stopQuestionTimer() {
+      if (state.timerInterval) {
+        clearInterval(state.timerInterval);
+        state.timerInterval = null;
+      }
     }
 
     function handleAnswer(selectedAnswer) {
@@ -573,6 +626,7 @@
       const theme = category.chapters.find(t => t.id === state.currentTheme);
       if (state.currentQuestion < theme.questions.length - 1) {
         state.currentQuestion++;
+        startQuestionTimer();
         render();
       }
     }
@@ -580,11 +634,13 @@
     function handlePrev() {
       if (state.currentQuestion > 0) {
         state.currentQuestion--;
+        startQuestionTimer();
         render();
       }
     }
 
     async function handleFinishQuiz() {
+      stopQuestionTimer();
       const category = categories.find(c => c.id === state.selectedCategory);
       const theme = category.chapters.find(t => t.id === state.currentTheme);
       const correct = Object.values(state.answers).filter(a => a.correct).length;
@@ -1668,6 +1724,12 @@
               </div>
             </div>
 
+            <div class="bg-gradient-to-r from-orange-900/30 to-red-900/30 rounded-2xl p-4 mb-6 shadow-xl border-2 ${state.timerExpired ? 'border-red-500' : state.questionTimer <= 30 ? 'border-red-400' : 'border-orange-500/30'}">
+              <div class="flex items-center justify-center gap-2">
+                <div id="questionTimer" class="text-2xl font-bold"></div>
+              </div>
+            </div>
+
             <div class="bg-gray-900 rounded-2xl p-8 border border-gray-800 shadow-xl mb-6">
               <div class="mb-8">
                 <span class="inline-block px-3 py-1 bg-orange-500/20 text-orange-400 rounded-lg text-xs font-bold mb-4">
@@ -1718,7 +1780,7 @@
                       class="w-full p-3 bg-gray-900/50 border border-gray-700 rounded-lg text-sm text-gray-300 focus:border-orange-500 focus:outline-none resize-none"
                       rows="3"
                       placeholder="이 문제에 대한 메모를 입력하세요..."
-                    >${state.teacherNotes?.[state.activeTheme]?.[state.currentQuestion] || ''}</textarea>
+                    >${state.teacherNotes?.[state.currentTheme]?.[state.currentQuestion] || ''}</textarea>
                   </div>
                 </div>
               ` : ''}
@@ -1779,6 +1841,7 @@
       `;
 
       document.getElementById('backToThemeBtn').addEventListener('click', () => {
+        stopQuestionTimer();
         state.currentTheme = null;
         state.currentQuestion = 0;
         state.answers = {};
@@ -1822,12 +1885,15 @@
       const teacherNoteTextarea = document.getElementById(`teacherNote-${state.currentQuestion}`);
       if (teacherNoteTextarea) {
         teacherNoteTextarea.addEventListener('input', (e) => {
-          if (!state.teacherNotes[state.activeTheme]) {
-            state.teacherNotes[state.activeTheme] = {};
+          if (!state.teacherNotes[state.currentTheme]) {
+            state.teacherNotes[state.currentTheme] = {};
           }
-          state.teacherNotes[state.activeTheme][state.currentQuestion] = e.target.value;
+          state.teacherNotes[state.currentTheme][state.currentQuestion] = e.target.value;
         });
       }
+
+      // 타이머 표시 업데이트
+      updateTimerDisplay();
     }
 
     function renderResultsScreen(app, currentStudentAttempts) {
