@@ -1599,7 +1599,7 @@
       document.querySelectorAll('.review-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           state.showResults = true;
-          state.selectedCategory = state.selectedCategory;
+          state.recordSelectedCategory = state.selectedCategory;
           render();
         });
       });
@@ -1941,32 +1941,35 @@
                             </div>
                           `}
 
-                          ${allWrongQuestions.length > 0 ? `
-                            <div class="bg-red-900/20 border border-red-500/30 rounded-xl p-4">
-                              <h4 class="text-sm font-bold text-red-400 mb-3 flex items-center flex-wrap gap-2">
-                                <span class="flex items-center">
-                                  ${icon('xCircle', 'mr-2', 18)}복습 필요 문제
-                                </span>
-                              </h4>
-                              <div class="space-y-3">
-                                ${allWrongQuestions.map((wrongQ, idx) => {
-                                  const questionData = theme.questions.find(q => q.question === wrongQ);
-                                  const questionIndex = theme.questions.indexOf(questionData);
-                                  const teacherNote = state.teacherNotes?.[theme.id]?.[questionIndex];
-                                  return `
-                                    <div class="text-sm bg-gray-900/50 rounded-lg p-3 border border-red-500/20">
-                                      <p class="text-red-300 font-medium mb-2 leading-relaxed">• ${wrongQ}</p>
-                                      ${teacherNote ? `
-                                        <p class="text-gray-400 text-xs leading-relaxed mt-2 p-2 bg-gray-800/50 rounded">
-                                          <span class="text-blue-400 font-bold">📝 선생님 메모:</span> ${teacherNote}
-                                        </p>
-                                      ` : ''}
+                          <div class="bg-gray-900/20 border border-gray-700 rounded-xl p-4">
+                            <h4 class="text-sm font-bold text-white mb-3 flex items-center flex-wrap gap-2">
+                              <span class="flex items-center">
+                                ${icon('bookOpen', 'mr-2', 18)}모든 문제 복습
+                              </span>
+                            </h4>
+                            <div class="space-y-3">
+                              ${theme.questions.map((q, questionIndex) => {
+                                const isWrong = allWrongQuestions.includes(q.question);
+                                const teacherNote = state.teacherNotes?.[theme.id]?.[questionIndex];
+                                return `
+                                  <div class="text-sm bg-gray-900/50 rounded-lg p-3 border ${isWrong ? 'border-red-500/30' : 'border-green-500/30'}">
+                                    <div class="flex items-start gap-2 mb-2">
+                                      ${isWrong
+                                        ? `<span class="text-red-400 font-bold flex-shrink-0">✗</span>`
+                                        : `<span class="text-green-400 font-bold flex-shrink-0">✓</span>`
+                                      }
+                                      <p class="${isWrong ? 'text-red-300' : 'text-green-300'} font-medium leading-relaxed">${q.question}</p>
                                     </div>
-                                  `;
-                                }).join('')}
-                              </div>
+                                    ${teacherNote ? `
+                                      <p class="text-gray-400 text-xs leading-relaxed mt-2 p-2 bg-gray-800/50 rounded ml-6">
+                                        <span class="text-blue-400 font-bold">📝 선생님 메모:</span> ${teacherNote}
+                                      </p>
+                                    ` : ''}
+                                  </div>
+                                `;
+                              }).join('')}
                             </div>
-                          ` : ''}
+                          </div>
                         </div>
                       `;
                     }).join('');
