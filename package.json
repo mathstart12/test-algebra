@@ -1,0 +1,21 @@
+{
+  "name": "ox-quiz-math-ssr",
+  "version": "1.0.0",
+  "description": "O/X Quiz with Server-Side Rendered Math",
+  "main": "build-ssr.js",
+  "scripts": {
+    "build": "node build-ssr.js"
+  },
+  "dependencies": {
+    "katex": "^0.16.9"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "math",
+    "katex",
+    "ssr",
+    "quiz"
+  ],
+  "author": "",
+  "license": "MIT"
+}
