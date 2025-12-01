@@ -1892,7 +1892,28 @@
 
                       const isRetakeAvailable = lastAttempt.percentage < 100;
                       const category = categories.find(c => c.id === lastAttempt.categoryId);
-                      const theme = category.chapters.find(t => t.id === lastAttempt.themeId);
+                      const theme = category?.chapters?.find(t => t.id === lastAttempt.themeId);
+
+                      // theme나 questions가 없으면 기본 정보만 표시
+                      if (!theme || !theme.questions) {
+                        return `
+                          <div class="bg-gray-900 rounded-2xl p-6 border border-gray-800 shadow-xl relative">
+                            <div class="flex justify-between items-start mb-4">
+                              <div>
+                                <h3 class="text-base font-bold text-white mb-1">${lastAttempt.themeName}</h3>
+                                <p class="text-xs text-gray-500">최종 시도: ${lastAttempt.date}</p>
+                              </div>
+                              <div class="text-right">
+                                <div class="text-2xl font-bold ${lastAttempt.percentage === 100 ? 'text-green-400' : 'text-orange-400'}">
+                                  ${lastAttempt.percentage}%
+                                </div>
+                                <div class="text-xs text-gray-500 font-semibold">${lastAttempt.correct} / ${lastAttempt.total}</div>
+                              </div>
+                            </div>
+                            <p class="text-gray-400 text-sm">문제 정보를 불러올 수 없습니다.</p>
+                          </div>
+                        `;
+                      }
 
                       return `
                         <div class="bg-gray-900 rounded-2xl p-6 border border-gray-800 shadow-xl relative">
