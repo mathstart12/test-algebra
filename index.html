@@ -1889,6 +1889,7 @@
 
                     return sortedThemeIds.map(themeId => {
                       const attempts = themeGroups[themeId];
+                      if (!attempts || attempts.length === 0) return '';
                       const lastAttempt = attempts[attempts.length - 1];
                       const allWrongQuestions = attempts
                         .flatMap(a => a.wrongQuestions || [])
