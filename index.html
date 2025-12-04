@@ -29,9 +29,15 @@
       opacity: 1;
     }
 
-    /* KaTeX 지수 크기 조정 */
+    /* KaTeX 지수 크기 및 위치 조정 */
     .katex .msupsub {
       font-size: 0.7em;
+    }
+
+    .katex sup {
+      vertical-align: super;
+      position: relative;
+      top: -0.3em;
     }
 
     @media (hover: none) and (pointer: coarse) {
