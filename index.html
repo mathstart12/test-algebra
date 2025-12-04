@@ -742,15 +742,31 @@
     let isFirstRender = true;
     
     function renderMath() {
-      // SSR: 수식이 이미 렌더링되어 있음
-      console.log('✓ SSR 모드 - 수식 렌더링 불필요');
-      
+      // KaTeX auto-render 실행
+      if (typeof renderMathInElement !== 'undefined') {
+        const app = document.getElementById('app');
+        if (app) {
+          try {
+            renderMathInElement(app, {
+              delimiters: [
+                {left: '\\(', right: '\\)', display: false},
+                {left: '\\[', right: '\\]', display: true}
+              ],
+              throwOnError: false
+            });
+            console.log('✓ KaTeX 렌더링 완료');
+          } catch (error) {
+            console.error('KaTeX 렌더링 오류:', error);
+          }
+        }
+      }
+
       // 첫 렌더링 시 앱 즉시 표시
       if (isFirstRender) {
         const app = document.getElementById('app');
         if (app && !app.classList.contains('ready')) {
           app.classList.add('ready');
-          console.log('✓ 앱 표시 (SSR)');
+          console.log('✓ 앱 표시');
         }
         isFirstRender = false;
       }
