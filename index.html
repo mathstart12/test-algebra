@@ -18,17 +18,22 @@
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
   <style>
-    * { 
+    * {
       font-family: 'Noto Sans KR', sans-serif;
     }
     .icon { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; }
-    
+
     /* 수식 렌더링 중에도 화면은 보이도록 */
     #app {
       visibility: visible;
       opacity: 1;
     }
-    
+
+    /* KaTeX 지수 크기 조정 */
+    .katex .msupsub {
+      font-size: 0.7em;
+    }
+
     @media (hover: none) and (pointer: coarse) {
       * {
         -webkit-tap-highlight-color: transparent;
