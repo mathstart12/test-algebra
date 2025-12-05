@@ -238,7 +238,8 @@
         id: 2,
         name: "Chapter 2. 지수함수와 로그함수",
         chapterInfo: [
-          { partName: "Part3", description: "지수함수의 그래프", range: "Q1~Q20" }
+          { partName: "Part3", description: "지수함수의 그래프", range: "Q1~Q20" },
+          { partName: "Part4", description: "로그함수의 그래프", range: "Q1~Q9" }
         ],
         chapters: [
           { id: 3, name: "Part3. 지수함수의 그래프", questions: [
@@ -262,6 +263,17 @@
             { question: "Q18. 함수 \\(y = \\left(\\frac{1}{4}\\right)^x - k\\left(\\frac{1}{2}\\right)^{x-2} + 3\\)의 최솟값이 \\(-1\\)일 때, 양수 \\(k\\)의 값은?<br><br>① \\(1\\)<br><br>② \\(2\\)<br><br>③ \\(3\\)<br><br>④ \\(4\\)<br><br>⑤ \\(5\\)", answer: "", hint: "", explanation: "" },
             { question: "Q19. \\(a^x + a^{-x}\\)의 최솟값 \\(2\\)인데 그 이유랑 \\(a^x - a^{-x}\\) = 실수전체 인 이유를 설명하시오.", answer: "", hint: "", explanation: "" },
             { question: "Q20. 함수 \\(y = 5(2^x + 2^{-x}) - (4^x + 4^{-x})\\)의 최댓값은 \\(\\frac{n}{m}\\)이다. \\(m+n\\)의 값은? (단, \\(m\\), \\(n\\)은 상수)", answer: "", hint: "", explanation: "" }
+          ]},
+          { id: 4, name: "Part4. 로그함수의 그래프", questions: [
+            { question: "Q1. 지수함수에서 로그함수가 나온 과정을 역함수의 개념을 도입하여 설명하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q2. 다음은 로그함수 \\(y = \\log_a x\\) (\\(a\\) > \\(0\\), \\(a\\) ≠ \\(1\\))에 관한 학생들의 대화이다. 틀은 설명을 한 학생을 고르시오. (틀린 이유도 말해야 합니다!)<br><br>다은 : 정의역은 양의 실수 전체의 집합이야!<br>윤후 : 치역은 \\(0\\)을 제외한 실수 전체의 집합이야!<br>상일 : \\(a\\)의 값에 관계없이 항상 \\((1, 0)\\)을 지나네~<br>준희 : \\(x\\)축을 점근선으로 가지는 함수야!<br>채현 : \\(y = a^x\\)와 역함수의 관계야!<br>성희 : \\(y = \\log_{\\frac{1}{a}} x\\)의 그래프와 \\(y\\)축에 대하여 대칭이야!", answer: "", hint: "", explanation: "" },
+            { question: "Q3. 함수 \\(f(x) = \\log_a(x-2) + 4\\)에 대하여 \\(f(5) = 7\\)일 때, \\(f(11)\\)의 값은?", answer: "", hint: "", explanation: "" },
+            { question: "Q4. 함수 \\(f(x) = \\log_2 x - k\\log_4 4\\)에 대하여 \\(f(4) = f(16)\\)일 때, 상수 \\(k\\)의 값은?<br><br>① \\(-1\\)<br><br>② \\(-2\\)<br><br>③ \\(-3\\)<br><br>④ \\(-4\\)<br><br>⑤ \\(-5\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q5. 세 함수 \\(y = \\log_2 x^2\\), \\(y = 2\\log_2 x\\), \\(y = 2\\log_2 |x|\\)가 있다.<br>다음 물음에 답하시오. (이유를 상세히 설명해야 합니다!)<br><br>(1) \\(y = \\log_2 x^2\\)과 \\(y = 2\\log_2 x\\)는 서로 같은 함수인가?<br><br>(2) \\(y = \\log_2 x^2\\)과 \\(y = 2\\log_2 |x|\\)는 서로 같은 함수인가?", answer: "", hint: "", explanation: "" },
+            { question: "Q6. 다음은 여러 가지 로그함수의 그래프를 나타낸 것이다.<br>\\(a\\), \\(b\\), \\(c\\), \\(d\\)의 대소관계를 나타내시오. (단, \\(a\\), \\(b\\), \\(c\\), \\(d\\)는 상수이다.)<br><br><img src='images/part4_q6_graph.png' alt='여러 로그함수 그래프' style='max-width: 400px; margin: 10px 0;'>", answer: "", hint: "", explanation: "" },
+            { question: "Q7. 아래 그림과 같이 \\(y = \\log_2 x\\)의 그래프 위의 점 \\(A\\)에 대하여<br>사각형 \\(ABCD\\)는 한 변의 길이가 \\(3\\)인 정사각형이다. 이 때 점 \\(D\\)의<br>좌표는 \\((a, b)\\)이다. \\(a+b\\)의 값은? (단, \\(a\\), \\(b\\)는 상수이다.)<br><br><img src='images/part4_q7_graph.png' alt='로그함수와 정사각형' style='max-width: 400px; margin: 10px 0;'>", answer: "", hint: "", explanation: "" },
+            { question: "Q8. 함수 \\(y = \\log_3 x\\)와 같은 함수인 것만을 보기에서 있는대로 고른 것은?<br><br>ㄱ. \\(y = \\log_{\\frac{1}{3}}(-x)\\)<br><br>ㄴ. \\(y = -\\log_3\\frac{1}{x}\\)<br><br>ㄷ. \\(y = \\log_9 x^2\\)<br><br>ㄹ. \\(y = -2\\log_{\\frac{1}{9}} x\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q9. 로그함수 \\(y = \\log_a(x-m)+n\\)의 그래프에 대하여<br>다음 물음에 답하시오.<br><br>(1) 정의역<br><br>(2) 치역<br><br>(3) 점근선<br><br>(4) \\(a\\)의 값에 관계없이 항상 지나는 정점", answer: "", hint: "", explanation: "" }
           ]}
         ]
       },
