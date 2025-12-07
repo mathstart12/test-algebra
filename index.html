@@ -410,7 +410,7 @@
             { question: "Q3. 방정식 \\(\\sin x = \\frac{\\sqrt{2}}{2}\\)의 모든 해의 합을 구하시오. (단, \\(0 \\leq x < 2\\pi\\))", answer: "", hint: "", explanation: "" },
             { question: "Q4. 방정식 \\(\\cos x = -\\frac{\\sqrt{3}}{2}\\)의 모든 해의 합을 구하시오. (단, \\(0 \\leq x < 2\\pi\\))", answer: "", hint: "", explanation: "" },
             { question: "Q5. 방정식 \\(\\sin^2 x - 2\\cos x + a = 0\\)이 실근을 갖기 위한 실수 \\(a\\)의<br>값으로 적절하지 않은 것은?<br><br>① \\(-\\frac{3}{2}\\)<br><br>② \\(-1\\)<br><br>③ \\(0\\)<br><br>④ \\(\\frac{7}{4}\\)<br><br>⑤ \\(3\\)", answer: "", hint: "", explanation: "" },
-            { question: "Q6. 그림과 같이 함수 \\(y = \\cos 2x\\) \\((0 \\leq x \\leq \\pi)\\)의 그래프가 직선 \\(y = \\frac{2}{5}\\)와<br>두 점 A, B에서 만나고, 직선 \\(y = -\\frac{2}{5}\\)와 두 점 C, D에서 만난다. 네 점<br>A, B, C, D의 \\(x\\)좌표를 각각 \\(\\alpha\\), \\(\\beta\\), \\(\\gamma\\), \\(\\delta\\)라 할 때, \\(\\alpha+\\beta+\\gamma+\\delta\\)의 값은?<br><br>① \\(2\\pi\\)<br><br>② \\(\\frac{5}{2}\\pi\\)<br><br>③ \\(3\\pi\\)<br><br>④ \\(\\frac{7}{2}\\pi\\)<br><br>⑤ \\(4\\pi\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q6. 그림과 같이 함수 \\(y = \\cos 2x\\) \\((0 \\leq x \\leq \\pi)\\)의 그래프가 직선 \\(y = \\frac{2}{5}\\)와<br>두 점 A, B에서 만나고, 직선 \\(y = -\\frac{2}{5}\\)와 두 점 C, D에서 만난다.<br><br><img src='images/image10.png' alt='코사인 함수와 직선의 교점' style='max-width: 400px; margin: 10px 0;'><br><br>네 점<br>A, B, C, D의 \\(x\\)좌표를 각각 \\(\\alpha\\), \\(\\beta\\), \\(\\gamma\\), \\(\\delta\\)라 할 때, \\(\\alpha+\\beta+\\gamma+\\delta\\)의 값은?<br><br>① \\(2\\pi\\)<br><br>② \\(\\frac{5}{2}\\pi\\)<br><br>③ \\(3\\pi\\)<br><br>④ \\(\\frac{7}{2}\\pi\\)<br><br>⑤ \\(4\\pi\\)", answer: "", hint: "", explanation: "" },
             { question: "Q7. \\(0 \\leq x < 2\\pi\\)일 때, 부등식 \\(2\\cos x < \\sqrt{2}\\)의 해가 \\(a < x < b\\)일 때,<br>\\(a+b\\)의 값은?<br><br>① \\(\\pi\\)<br><br>② \\(\\frac{5}{4}\\pi\\)<br><br>③ \\(\\frac{3}{2}\\pi\\)<br><br>④ \\(\\frac{7}{4}\\pi\\)<br><br>⑤ \\(2\\pi\\)", answer: "", hint: "", explanation: "" },
             { question: "Q8. 부등식 \\(-\\frac{\\sqrt{3}}{2} \\leq \\sin x \\leq \\frac{\\sqrt{3}}{2}\\) \\((0 \\leq x \\leq 2\\pi)\\)의 해는?", answer: "", hint: "", explanation: "" },
             { question: "Q9. 부등식 \\(-\\frac{\\sqrt{3}}{3} \\leq \\tan x \\leq 1\\) \\((0 \\leq x \\leq 2\\pi)\\)의 해는?", answer: "", hint: "", explanation: "" },
@@ -419,12 +419,143 @@
           ]}
         ]
       },
-      { id: 5, name: "Chapter 5. 사인법칙과 코사인법칙", chapters: [] },
-      { id: 6, name: "Chapter 6. 등차수열과 등비수열", chapters: [] },
+      { id: 5, name: "Chapter 5. 사인법칙과 코사인법칙",
+        chapterInfo: [
+          { partName: "Part1", description: "사인법칙", range: "Q1~Q7" },
+          { partName: "Part2", description: "코사인법칙", range: "Q1~Q7" },
+          { partName: "Part3", description: "삼각형의 넓이", range: "Q1~Q9" }
+        ],
+        chapters: [
+          { id: 1, name: "Part1. 사인법칙", questions: [
+            { question: "Q1. 사인 법칙이 무엇인지 간단히 설명하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q2. 삼각형 ABC에서 아래 그림과 같이 주어졌을 때, 다음 물음에 답하시오.<br><br><img src='images/image11.png' alt='삼각형 ABC와 외접원' style='max-width: 400px; margin: 10px 0;'><br><br>(1) 외접원의 반지름 \\(R\\)의 값을 구하시오.<br><br>(2) \\(\\overline{AC}\\)의 길이를 구하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q3. 삼각형 ABC에서 \\(a = 4\\), \\(b = 2\\), \\(\\angle A = 60^\\circ\\)일 때, \\(\\cos^2 B\\)의 값은?<br><br>① \\(\\frac{9}{16}\\pi\\)<br><br>② \\(\\frac{5}{8}\\)<br><br>③ \\(\\frac{11}{16}\\)<br><br>④ \\(\\frac{3}{4}\\)<br><br>⑤ \\(\\frac{13}{16}\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q4. 삼각형 ABC에서 세 내각의 크기의 비가 \\(A:B:C = 1:2:1\\)일 때,<br>세 변의 길이의 비 \\(a:b:c\\)는?", answer: "", hint: "", explanation: "" },
+            { question: "Q5. 삼각형 ABC에서 \\(\\sin A : \\sin B : \\sin C = 3:1:2\\)일 때, \\(ab:bc:ca\\)를<br>가장 간단한 자연수의 비로 나타내면?", answer: "", hint: "", explanation: "" },
+            { question: "Q6. 아래 그림과 같이 중심각의 크기가 \\(\\frac{\\pi}{3}\\)이고, 반지름의 길이가 \\(2\\sqrt{3}\\)인<br>부채꼴 ABC의 넓이를 \\(A\\), 부채꼴 ABC에 외접하는 원의 둘레의 길이를<br>\\(B\\)라 할 때, \\(A+B\\)의 값은?<br><br><img src='images/image12.png' alt='부채꼴과 외접원' style='max-width: 400px; margin: 10px 0;'><br><br>① \\(4\\pi\\)<br><br>② \\(5\\pi\\)<br><br>③ \\(6\\pi\\)<br><br>④ \\(7\\pi\\)<br><br>⑤ \\(8\\pi\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q7. 삼각형 ABC에서 \\(a\\sin A + b\\sin B < c\\sin C\\)가 성립할 때,<br>이 삼각형은 어떤 삼각형인지 말하시오.", answer: "", hint: "", explanation: "" }
+          ]},
+          { id: 2, name: "Part2. 코사인법칙", questions: [
+            { question: "Q1. 코사인 법칙이 무엇인지 간단하게 설명하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q2. 다음은 사인법칙과 코사인 법칙을 문제에 적용하는<br>상황을 순서없이 나열한 것이다. 각 물음에 답하시오.<br><br>ㄱ. 외접원의 반지름의 길이를 구해야 하는 상황<br><br>ㄴ. 삼각형에서 세 변의 길이가 주어져 있고, 어느 한 각을<br>&nbsp;&nbsp;&nbsp;&nbsp;구해야 하는 상황<br><br>ㄷ. 삼각형에서 두 변과 끼인각이 주어져 있고, 남은 한변의<br>&nbsp;&nbsp;&nbsp;&nbsp;길이를 구해야 하는 상황<br><br>(1) 사인법칙을 쓰면 유용한 상황은?<br><br>(2) 코사인 법칙을 쓰면 유용한 상황은?", answer: "", hint: "", explanation: "" },
+            { question: "Q3. 삼각형 ABC에서 \\(A = 60^\\circ\\), \\(\\overline{AB} = 3\\), \\(\\overline{AC} = 4\\) 일 때,<br>\\(a^2\\)의 값은?<br><br><img src='images/image13.png' alt='삼각형 ABC' style='max-width: 400px; margin: 10px 0;'>", answer: "", hint: "", explanation: "" },
+            { question: "Q4. 삼각형 ABC에서 \\(\\overline{AB} = \\sqrt{19}\\), \\(\\overline{BC} = 2\\), \\(\\overline{AC} = 3\\)일 때,<br>다음 물음에 답하시오.<br><br><img src='images/image14.png' alt='삼각형 ABC' style='max-width: 400px; margin: 10px 0;'><br><br>(1) \\(\\cos C\\)의 값은?<br><br>(2) \\(\\tan C\\)의 값은?", answer: "", hint: "", explanation: "" },
+            { question: "Q5. 아래 그림에서 세 점 B, C, D가 한 직선 위에 있을 때,<br>\\(\\overline{AE}^2\\)의 값은?<br><br><img src='images/image15.png' alt='기하학적 도형' style='max-width: 400px; margin: 10px 0;'><br><br>① \\(188\\)<br><br>② \\(190\\)<br><br>③ \\(192\\)<br><br>④ \\(194\\)<br><br>⑤ \\(196\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q6. 삼각형 ABC에서 \\(\\sin A : \\sin B : \\sin C = 2:3:4\\)일 때,<br>\\(\\cos A\\)의 값은?<br><br>① \\(\\frac{3}{8}\\)<br><br>② \\(\\frac{1}{2}\\)<br><br>③ \\(\\frac{5}{8}\\)<br><br>④ \\(\\frac{3}{4}\\)<br><br>⑤ \\(\\frac{7}{8}\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q7. 그림과 같이 반지름의 길이가 \\(R\\)인 원 O에 내접하는 삼각형 ABC가<br>있다. \\(\\overline{AB} = 4\\), \\(\\overline{BC} = 6\\), \\(\\cos B = \\frac{1}{3}\\)일 때 다음 물음에 답하시오.<br><br><img src='images/image16.png' alt='원에 내접하는 삼각형' style='max-width: 400px; margin: 10px 0;'><br><br>(1) \\(\\overline{AC}\\)의 값은?<br><br>(2) \\(\\sin A\\)의 값은?<br><br>① \\(\\frac{2\\sqrt{2}}{3}\\)<br><br>② \\(\\frac{\\sqrt{7}}{3}\\)<br><br>③ \\(\\frac{\\sqrt{6}}{3}\\)<br><br>④ \\(\\frac{\\sqrt{5}}{3}\\)<br><br>⑤ \\(\\frac{2}{3}\\)<br><br>(3) \\(R\\)의 값은?<br><br>① \\(\\frac{3\\sqrt{2}}{2}\\)<br><br>② \\(\\frac{7\\sqrt{2}}{4}\\)<br><br>③ \\(2\\sqrt{2}\\)<br><br>④ \\(\\frac{9\\sqrt{2}}{4}\\)<br><br>⑤ \\(\\frac{5\\sqrt{2}}{2}\\)", answer: "", hint: "", explanation: "" }
+          ]},
+          { id: 3, name: "Part3. 삼각형의 넓이", questions: [
+            { question: "Q1. 삼각형의 넓이를 sin을 이용해 표현하는 방법을<br>간단하게 설명하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q2. 삼각형 ABC에서 \\(a = 5\\), \\(b = \\sqrt{19}\\), \\(c = 2\\)일 때,<br>다음 물음에 답하시오.<br><br><img src='images/image17.png' alt='삼각형 ABC' style='max-width: 400px; margin: 10px 0;'><br><br>(1) \\(\\sin B\\)의 값은?<br><br>① \\(\\frac{\\sqrt{3}}{4}\\)<br><br>② \\(\\frac{\\sqrt{3}}{3}\\)<br><br>③ \\(\\frac{\\sqrt{3}}{2}\\)<br><br>④ \\(\\frac{\\sqrt{5}}{4}\\)<br><br>⑤ \\(\\frac{\\sqrt{5}}{3}\\)<br><br>(2) 삼각형 ABC의 넓이는?<br><br>① \\(2\\sqrt{3}\\)<br><br>② \\(\\frac{5\\sqrt{3}}{2}\\)<br><br>③ \\(3\\sqrt{3}\\)<br><br>④ \\(\\frac{7\\sqrt{3}}{2}\\)<br><br>⑤ \\(4\\sqrt{3}\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q3. 그림과 같은 삼각형 ABC에서 \\(\\angle B = \\angle C = \\frac{\\pi}{6}\\)이고, 삼각형 ABC의<br>외접원의 반지름의 길이가 \\(4\\)일 때, 삼각형 ABC의 넓이는?<br><br><img src='images/image18.png' alt='삼각형 ABC와 외접원' style='max-width: 400px; margin: 10px 0;'><br><br>① \\(\\frac{5\\sqrt{3}}{2}\\)<br><br>② \\(3\\sqrt{3}\\)<br><br>③ \\(\\frac{7\\sqrt{3}}{2}\\)<br><br>④ \\(4\\sqrt{3}\\)<br><br>⑤ \\(\\frac{9\\sqrt{3}}{2}\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q4. 평행사변형의 넓이를 sin을 이용해 표현하는 방법을<br>간단하게 설명하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q5. 평행사변형 ABCD에서 \\(\\overline{AB} = 4\\), \\(\\overline{BC} = 6\\), \\(\\angle B = \\frac{\\pi}{6}\\)일 때,<br>이 평행사변형의 넓이는?", answer: "", hint: "", explanation: "" },
+            { question: "Q6. 일반적인 사각형 ABCD에서 두 대각선의 길이가<br>\\(a\\), \\(b\\)라 하고, 두 대각선이 이루는 각의 크기를 \\(\\theta\\)라 할 때,<br>ABCD의 넓이를 sin을 이용하여 표현하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q7. 사각형 ABCD에서 두 대각선의 길이를 각각 \\(a\\), \\(b\\)라 할 때,<br>사각형 ABCD는 다음 조건을 만족시킨다.<br><br>ㄱ \\(a\\), \\(b\\)는 자연수이다.<br><br>ㄴ 두 대각선이 이루는 각의 크기는 \\(120^\\circ\\)이다.<br><br>ㄷ 사각형의 넓이는 \\(3\\sqrt{3}\\)이다.<br><br>\\(a+b\\)의 최솟값은?", answer: "", hint: "", explanation: "" },
+            { question: "Q8. 다음은 \\(\\triangle ABC\\)에서 \\(\\overline{AB} = 4\\), \\(\\overline{BC} = 8\\), \\(\\angle BAC = 120^\\circ\\)이다.<br>\\(\\angle A\\)의 이등분선이 변 BC와 만나는 점을 D라 할 때, \\(\\overline{BD}\\)의 길이를<br>구하는 과정이다.<br><br><img src='images/image19.png' alt='삼각형 ABC와 각의 이등분선' style='max-width: 400px; margin: 10px 0;'><br><br>선생님 : \\(\\overline{BD}\\)의 길이는 어떻게 구해야 할까요?<br><br>성희 : 음.. 일단 \\(\\overline{AD}\\)의 길이를 구하고 삼각형 ABD에서<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;코사인 법칙을 적용하면 될 것 같아요!<br><br>선생님 : 그럼 \\(\\overline{AD}\\)의 길이는 어떻게 구하죠?<br><br>성희 : \\(\\triangle ABC = \\triangle ABD + \\triangle ACD\\)임을 이용해서 구할 수 있어요!<br><br>선생님 : 그럼 식을 세워서 AD의 값을 구해볼까요?<br><br>성희 : 그럼 \\(\\overline{AD}\\)의 값은 \\(a\\)에요!<br><br>선생님 : 맞아요! \\(\\overline{BD}\\)의 값도 마저 계산해볼까요?<br><br>성희 : \\(\\overline{BD}\\)의 값은 \\(b\\)에요!<br><br>선생님 : 네 맞았습니다~ 잘했어요 ^-^<br><br>다음 대화를 참고하여, \\(\\frac{b^2}{a}\\)의 값을 구하시오.<br><br>① \\(\\frac{14}{3}\\)<br><br>② \\(5\\)<br><br>③ \\(\\frac{16}{5}\\)<br><br>④ \\(\\frac{17}{3}\\)<br><br>⑤ \\(6\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q9. 그림과 같이 원 모양의 마당에 네 지점 A, B, C, D<br>를 연결하는 올타리를 치려 한다. 다음 물음에 답하시오.<br>(단, \\(\\overline{AB} = 4\\)m, \\(\\overline{BC} = 2\\)m, \\(\\overline{CD} = 1\\)m, \\(\\overline{DA} = 2\\)m이다)<br><br><img src='images/image20.png' alt='원에 내접하는 사각형' style='max-width: 400px; margin: 10px 0;'><br><br>(1) \\(\\cos B\\)의 값은?<br><br>① \\(\\frac{1}{2}\\)<br><br>② \\(\\frac{2}{3}\\)<br><br>③ \\(\\frac{3}{4}\\)<br><br>④ \\(\\frac{4}{5}\\)<br><br>⑤ \\(\\frac{5}{6}\\)<br><br>(2) 마당의 지름의 길이는?<br><br>① \\(\\sqrt{14}\\)<br><br>② \\(\\frac{8\\sqrt{14}}{7}\\)<br><br>③ \\(\\frac{9\\sqrt{14}}{7}\\)<br><br>④ \\(\\frac{10\\sqrt{14}}{7}\\)<br><br>⑤ \\(\\frac{11\\sqrt{14}}{7}\\)", answer: "", hint: "", explanation: "" }
+          ]}
+        ]
+      },
+      { id: 6, name: "Chapter 6. 등차수열과 등비수열",
+        chapterInfo: [
+          { partName: "Part1", description: "수열", range: "Q1~Q3" },
+          { partName: "Part2", description: "등차수열", range: "Q1~Q27" },
+          { partName: "Part4", description: "등비수열", range: "Q1~Q23" }
+        ],
+        chapters: [
+          { id: 1, name: "Part1. 수열", questions: [
+            { question: "Q1. 수열의 정의에 대하여 간단하게 설명해보세요!", answer: "", hint: "", explanation: "" },
+            { question: "Q2. 다음 수열의 일반항 \\(a_n\\)의 첫 번째 항부터 네 번째<br>항까지 구하시오.<br><br>(1) \\(a_n = 2n + 1\\)<br><br>(2) \\(b_n = \\frac{4}{n+3}\\)<br><br>(3) \\(c_n = \\log(n^2 - n + 5)\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q3. 다음 수열의 일반항 \\(a_n\\)을 구하시오.<br><br>(1) \\(a_n = 4, 8, 12, 16, 20, ...\\)<br><br>(2) \\(a_n = 11, 101, 1001, 10001, ...\\)", answer: "", hint: "", explanation: "" }
+          ]},
+          { id: 2, name: "Part2. 등차수열", questions: [
+            { question: "Q1. 등차수열이 무엇인지 간단하게 설명해보세요!", answer: "", hint: "", explanation: "" },
+            { question: "Q2. 다음 물음에 답하시오.<br><br>(1) 수열 \\(-1, 2, 5, 8, 11\\) ... 의 첫째항과 공차를 말하시오<br><br>(2) 첫째항이 \\(4\\)이고 공차가 \\(-2\\)인 등차수열을 나열하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q3. 다음 물음에 답하시오<br><br>(1) 첫째항이 \\(a_1\\)이고 공차가 \\(d\\)인 등차수열의 일반항 \\(a_n\\)을 나타내시오.<br><br>(2) 첫째항이 \\(5\\)이고 공차가 \\(-3\\)인 등차수열의 일반항 \\(a_n\\)을 구하시오.<br><br>(3) 수열 \\(5, 11, 17, 23, 29\\) ... 의 일반항 \\(a_n\\)을 구하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q4. 제 \\(3\\)항이 \\(20\\)이고, 제 \\(7\\)항이 \\(52\\)인 등차수열의<br>일반항 \\(a_n\\)을 구하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q5. 첫째항이 \\(87\\)이고 공차가 \\(-4\\)인 등차수열에서<br>처음으로 음수가 되는 항은 제 몇 항인지 구하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q6. 등차수열 \\(a_n\\)에 대하여 \\(a_3 = 22\\), \\(a_8 = 52\\)를 만족할 때,<br>등차수열의 일반항을 구하는 방법을 이용하지 말고<br>다음의 값을 구해보시오.<br><br>(1) \\(a_1\\)<br><br>(2) \\(a_{10}\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q7. 수열 \\(a_n\\)과 공차가 \\(4\\)인 등차수열 \\(b_n\\)에 대하여<br>\\(b_n + a_n = 9n + 2\\)가 성립한다. \\(a_4 = 10\\)일 때, \\(b_6\\)의 값은?<br><br>① \\(36\\)<br><br>② \\(38\\)<br><br>③ \\(40\\)<br><br>④ \\(42\\)<br><br>⑤ \\(42\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q8. 두 수 \\(3\\)과 \\(59\\)사이에 \\(21\\)개의 수를 넣어서 만든<br>수열 \\(3, a_1, a_2, a_3 \\cdots, a_{21}, 59\\) 이 등차수열을 이룰 때<br>\\(a_2\\)의 값은?<br><br>① \\(\\frac{85}{11}\\)<br><br>② \\(\\frac{87}{11}\\)<br><br>③ \\(\\frac{89}{11}\\)<br><br>④ \\(\\frac{91}{11}\\)<br><br>⑤ \\(\\frac{93}{11}\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q9. 등차중항의 뜻에 대하여 간단하게 설명해보세요!", answer: "", hint: "", explanation: "" },
+            { question: "Q10. 네 수 \\(4\\), \\(a\\), \\(-6\\), \\(b\\)가 이 순서대로 등차수열을 이룰 때,<br>\\(a-b\\)의 값은?", answer: "", hint: "", explanation: "" },
+            { question: "Q11. 공차가 \\(3\\)인 등차수열 \\(a_n\\)에 대하여 \\(a_2 + a_5 + a_8 = 48\\)일 때,<br>\\(a_1 + a_9\\)의 값은?", answer: "", hint: "", explanation: "" },
+            { question: "Q12. 등차수열 \\(a_n\\)에서 \\(a_9 + a_{13} = 12\\)일 때, \\(a_1 + a_4 + a_{18} + a_{21}\\)<br>의 값은?", answer: "", hint: "", explanation: "" },
+            { question: "Q13. 등차수열을 공부한 학생들의 대화 중 옳지 않은<br>설명을 한 학생을 모두 고르시오.<br>(틀린 이유를 설명하셔야 합니다!)<br><br>지연 : 등차수열 \\(a_n\\)은 \\(n\\)에 관한 일차식이야!<br><br>가영 : 첫째항이 \\(a_1\\)이고 공차가 \\(d\\)인 등차수열을 \\(n\\)에 관한<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;일차함수로 생각했을 때, 기울기는 \\(a_1\\)이야!!<br><br>휘서 : \\(a_{n+1} + a_n = d\\)인 관계식이 성립하는 수열 \\(a_n\\)은<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;등차수열이야!<br><br>정은 : \\(b = \\frac{a+c}{2}\\)일 때, \\(b\\)를 \\(a\\)와 \\(c\\)의 등차중항이라고 해!<br><br>다은 : 등차수열 \\(a_n\\)과 등차수열 \\(b_n\\)을 더한 수열을 \\(c_n\\)이라고 하면<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\\(c_n\\)은 등차수열이야!<br><br>규혁 : 등차수열 \\(a_n\\)과 등차수열 \\(b_n\\)을 곱한 수열을 \\(d_n\\)이라고 하면<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\\(d_n\\)은 등차수열이야!", answer: "", hint: "", explanation: "" },
+            { question: "Q14. 두 수열 \\(a_n\\)과 \\(b_n\\)이 다음 조건을 만족시킨다.<br><br>ㄱ \\(a_n\\)과 \\(b_n\\)은 등차수열이다<br><br>ㄴ 수열 \\(2a_n + 8b_n\\)의 공차는 \\(32\\)이다.<br><br>ㄷ \\(a_n\\)과 \\(b_n\\)의 공차는 자연수이다.<br><br>수열 \\(a_n\\)과 \\(b_n\\)의 공차가 될 수 있는 순서쌍의 개수는?<br><br>① \\(2\\)<br><br>② \\(3\\)<br><br>③ \\(4\\)<br><br>④ \\(5\\)<br><br>⑤ \\(6\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q15. 다음 그림과 같이 \\(\\angle A = 90^\\circ\\)이고 \\(\\overline{CD}\\)의 길이가 \\(4\\sqrt{5}\\)인<br>사다리꼴 \\(\\square ABCD\\)가 있다. 선분 \\(\\overline{AD}\\), \\(\\overline{AB}\\), \\(\\overline{BC}\\)의 길이는<br>이 순서대로 등차수열을 이루고, \\(\\triangle BCD\\)가 이등변삼각형일 때,<br>\\(\\square ABCD\\)의 넓이는?<br><br><img src='images/image21.png' alt='사다리꼴 ABCD' style='max-width: 400px; margin: 10px 0;'><br><br>① \\(58\\)<br><br>② \\(60\\)<br><br>③ \\(62\\)<br><br>④ \\(64\\)<br><br>⑤ \\(66\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q16. 수열 \\(a_n\\)의 첫째항부터 제 \\(n\\)항까지의 합을 \\(S_n\\)이라고 할 때,<br>\\(a_n\\)과 \\(S_n\\)의 관계식을 나타내시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q17. 수열 \\(a_n\\)에 대하여 \\(S_n = -3n^2 + 4n + 1\\)일 때,<br>다음을 구하시오<br><br>(1) \\(a_1\\)<br><br>(2) \\(a_n\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q18. 등차수열의 첫째항부터 제 \\(n\\)항까지의 합 \\(S_n\\)을<br>나타내는 방법을 모두 나타내고, 각 식의 특징을 설명하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q19. 첫째항이 \\(3\\)이고 공차가 \\(5\\)인 등차수열의 첫째항부터<br>제 \\(10\\)항까지의 합을 구하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q20. 등차수열 \\(3, 11, 19, 27, 35, \\cdots\\)의 첫째항부터<br>제 \\(20\\)항까지의 합을 구하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q21. 등차수열 \\(a_n\\)에서 \\(a_3 = 14\\), \\(a_8 = 39\\)일 때,<br>첫째항부터 제 \\(20\\)항까지의 합을 구하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q22. 첫째항이 \\(80\\)이고 공차가 \\(-3\\)인 등차수열에서<br>첫째항부터 마지막 양수 항까지의 합을 구하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q23. 첫째항이 \\(-50\\)이고 공차가 \\(4\\)인 등차수열에서<br>첫째항부터 제 \\(n\\)항까지의 합을 \\(S_n\\)이라 할 때,<br>\\(S_n\\)이 최소가 되는 \\(n\\)의 값과 그 때의 최솟값을 구하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q24. 등차수열 \\(a_n\\)에서 \\(a_1 + a_4 = 16\\)이고, \\(a_2 + a_5 = 22\\)일 때,<br>첫째항부터 제 \\(10\\)항까지의 합을 구하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q25. 등차수열 \\(a_n\\)에서 \\(\\sum_{k=1}^{10} a_k = 90\\), \\(\\sum_{k=11}^{20} a_k = 250\\)일 때,<br>\\(\\sum_{k=21}^{30} a_k\\)의 값은?<br><br>① \\(390\\)<br><br>② \\(400\\)<br><br>③ \\(410\\)<br><br>④ \\(420\\)<br><br>⑤ \\(430\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q26. 첫째항이 양수인 등차수열 \\(a_n\\)이 다음 조건을 만족시킬 때,<br>\\(a_1\\)의 값은?<br><br>ㄱ \\(S_{13} = 156\\)<br><br>ㄴ \\(a_4 + a_{10} = 24\\)<br><br>① \\(4\\)<br><br>② \\(6\\)<br><br>③ \\(8\\)<br><br>④ \\(10\\)<br><br>⑤ \\(12\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q27. 첫째항과 공차가 모두 자연수인 등차수열 \\(a_n\\)에 대하여<br>\\(\\sum_{k=1}^{9} a_k = 180\\)일 때, \\(a_4\\)의 최댓값은?<br><br>① \\(35\\)<br><br>② \\(36\\)<br><br>③ \\(37\\)<br><br>④ \\(38\\)<br><br>⑤ \\(39\\)", answer: "", hint: "", explanation: "" }
+          ]},
+          { id: 4, name: "Part4. 등비수열", questions: [
+            { question: "Q1. 등비수열에 대하여 간단하게 설명하세요!", answer: "", hint: "", explanation: "" },
+            { question: "Q2. 등비수열 \\(\\{a_n\\}\\) : \\(6, 18, 54, 162, \\cdots\\)에 대하여 다음 물음에 답하시오.<br><br>(1) 공비를 구하시오.<br><br>(2) 일반항 \\(a_n\\)을 구하시오.<br><br>(3) \\(a_{n+1}\\)과 \\(a_n\\)을 사용한 관계식으로 나타내시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q3. 첫째항이 양수인 등비수열 \\(\\{a_n\\}\\)에 대하여<br>\\(a_2 = -10\\), \\(a_4 = -40\\)을 만족할 때, 일반항 \\(a_n\\)을 구하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q4. 제 \\(3\\)항이 \\(128\\), 제 \\(6\\)항이 \\(16\\)인 등비수열에 대하여<br>처음으로 \\(1\\)보다 작아지는 항은 제 몇 항인지 구하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q5. 등비중항에 대하여 간단하게 설명하세요!", answer: "", hint: "", explanation: "" },
+            { question: "Q6. \\(a_1, a_2, a_3, a_4, \\cdots, a_{97}, a_{98}, a_{99}\\)이 등비수열을 이룰 때,<br>\\(a_{50} = 20\\)일 때, \\(a_2 \\cdot a_{98}\\)의 값은?", answer: "", hint: "", explanation: "" },
+            { question: "Q7. 서로 다른 세 수 \\(6, a, b\\)가 이 순서대로 등차수열을<br>이루고, 세 수 \\(a, b, 6\\)는 이 순서대로 등비수열을 이룰 때,<br>\\(ab\\)의 값은?<br><br>① \\(-\\frac{9}{2}\\)<br><br>② \\(-4\\)<br><br>③ \\(-\\frac{7}{2}\\)<br><br>④ \\(-3\\)<br><br>⑤ \\(-\\frac{5}{2}\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q8. 다음 그림과 같이 둘레의 길이가 \\(19\\)인 \\(\\triangle ABC\\)가 있다.<br>\\(\\overline{BC}, \\overline{AB}, \\overline{CA}\\)의 길이를 각각 \\(a, b, c\\)라 할 때, \\(\\triangle ABC\\)는 다음 조건을<br>만족시킨다. (단, \\(\\frac{\\pi}{2} < \\theta < \\pi\\))<br><br><img src='images/image22.png' alt='삼각형 ABC' style='max-width: 400px; margin: 10px 0;'><br><br>(가) \\(a, b, c\\)는 이 순서대로 등비수열을 이룬다.<br><br>(나) \\(a, b, c\\)는 자연수이다.<br><br>(다) \\(b\\)는 \\(7\\)이하의 짝수이다.<br><br>\\(\\cos \\theta\\)의 값은?<br><br>① \\(-\\frac{9}{16}\\)<br><br>② \\(-\\frac{29}{48}\\)<br><br>③ \\(-\\frac{31}{48}\\)<br><br>④ \\(-\\frac{11}{16}\\)<br><br>⑤ \\(-\\frac{35}{48}\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q9. 수열 \\(\\{a_n\\}\\)이 공비가 \\(r\\)인 등비수열일 때, 다음<br>수열의 공비를 각각 구하시오.<br><br>(1) \\(a_n^2\\)<br><br>(2) \\(\\frac{1}{a_n}\\)<br><br>(3) \\(a_{n+1} + a_n\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q10. 등비수열 \\(\\{a_n\\}\\)에 대하여 수열 \\(\\{8a_n - a_{n+1}\\}\\)이 첫째항이<br>\\(18\\), 공비가 \\(5\\)인 등비수열일 때, \\(a_2\\)의 값은?<br><br>① \\(30\\)<br><br>② \\(32\\)<br><br>③ \\(34\\)<br><br>④ \\(36\\)<br><br>⑤ \\(38\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q11. 등비수열 \\(\\{a_n\\}\\)에 대하여 \\(a_1 a_2 = 2\\), \\(a_9 a_{10} = 18\\)일 때,<br>\\(a_5 a_6\\)의 값은?", answer: "", hint: "", explanation: "" },
+            { question: "Q12. 수열 \\(\\{a_n\\}\\)은 공비가 \\(r_1\\)인 등비수열이고 수열 \\(\\{b_n\\}\\)은<br>공비가 \\(r_2\\)인 등비수열일 때, 옳은 설명을 한 학생을<br>모두 고르시오. (단, \\(r_1\\)과 \\(r_2\\)는 \\(0\\)이 아닌 실수이다.)<br><br>서영 : 수열 \\(\\{a_n + b_n\\}\\)은 등비수열이야!<br><br>희원 : 수열 \\(\\{a_n b_n\\}\\)은 등비수열이야!<br><br>정은 : \\(r_1 = r_2\\)일 때, 수열 \\(\\{2a_n - b_n\\}\\)은 등비수열이야!<br><br>① 서영<br><br>② 희원<br><br>③ 서영, 희원<br><br>④ 희원, 정은<br><br>⑤ 서영, 희원, 정은", answer: "", hint: "", explanation: "" },
+            { question: "Q13. 첫째항이 \\(a\\)이고 공비가 \\(r\\)인 등비수열의 첫째항부터<br>제 \\(n\\)항까지의 합 \\(S_n\\)을 표현하고 설명하세요!", answer: "", hint: "", explanation: "" },
+            { question: "Q14. 첫째항부터 제 \\(3\\)항까지의 합이 \\(14\\), 첫째항부터<br>제 \\(6\\)항까지의 합이 \\(126\\)인 등비수열의 일반항을 구하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q15. 등비수열 \\(\\{a_n\\}\\)이 \\(a_3 = 12\\), \\(a_5 = 48\\)을 만족할 때, 등비수열<br>\\(\\{a_n\\}\\)의 첫째항부터 제 \\(n\\)항까지의 합을 \\(S_n\\)이라고 하자.<br>이때, \\(S_n \\geq 1000\\)을 만족하는 \\(n\\)의 최솟값은?", answer: "", hint: "", explanation: "" },
+            { question: "Q16. 수열 \\(\\{a_n\\}\\)의 첫째항부터 제 \\(n\\)항까지의 합을 \\(S_n\\)이라 하면<br>\\(S_n = 7 \\times 3^n + k\\)가 성립할 때, 수열 \\(\\{a_n\\}\\)이 첫째항부터 등비수열을 이루<br>도록 하는 \\(k\\)의 값은?", answer: "", hint: "", explanation: "" },
+            { question: "Q17. 첫째항이 \\(5\\)이고 공비가 양수인 등비수열 \\(\\{a_n\\}\\)의 첫째항부터 제 \\(n\\)항까<br>지의 합을 \\(S_n\\)이라 하자. \\(\\frac{a_4}{S_5 - S_3} = \\frac{1}{3}\\)일 때, \\(a_3\\)의 값은?", answer: "", hint: "", explanation: "" },
+            { question: "Q18. 모든 항이 양수인 등비수열에 대하여 첫째항부터 제 \\(3\\)항까지의<br>합이 \\(8\\), 첫째항부터 제 \\(6\\)항까지의 합이 \\(40\\)일 때, 이 수열의 첫째항부터<br>제 \\(9\\)항까지의 합을 구하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q19. 아래 그림과 같이 한 변의 길이가 \\(x\\)인 정사각형 모양의 종이가<br>있다. 첫 번째 시행에서 각 변의 중점을 이어서 만든 네 개의 정사각<br>형 중에서 왼쪽 위의 정사각형을 색칠한다. 두 번째 시행에서 첫 번째<br>시행 후 남은 오른쪽 아래의 정사각형에서 같은 방법으로 정사각형을<br>색칠한다. 이와 같은 시행을 반복할 때, \\(n\\)번째 시행에서 색칠하는 정사<br>각형의 넓이를 \\(a_n\\)이라 하자. 이 때, \\(a_5 = \\frac{9}{256}\\)일 때, \\(x\\)의 값은?<br><br><img src='images/image23.png' alt='정사각형 패턴' style='max-width: 400px; margin: 10px 0;'>", answer: "", hint: "", explanation: "" },
+            { question: "Q20. 한 변의 길이가 \\(2\\)인 정삼각형 모양의 종이가 있다. 아래 그림과 같이<br>\\(1\\)회의 시행에서 각 변의 중점을 이어서 만든 정삼각형을 오려 낸다. \\(2\\)회 시<br>행에서는 \\(1\\)회 시행 후 남은 \\(3\\)개의 작은 정삼각형에서 같은 방법으로 만든<br>정삼각형을 오려 낸다. 이와 같은 시행을 계속 할 때, \\(n\\)회 시행에서 오려낸<br>정삼각형들의 넓이의 합을 \\(a_n\\)이라 하자. 수열 \\(\\{a_n\\}\\)의 첫째항부터 제 \\(n\\)항까<br>지의 합을 \\(S_n\\)이라 할 때, \\(S_8\\)의 값은?<br><br><img src='images/image24.png' alt='정삼각형 패턴' style='max-width: 400px; margin: 10px 0;'><br><br>① \\(\\sqrt{3}\\left\\{1 - \\left(\\frac{3}{8}\\right)^7\\right\\}\\)<br><br>② \\(\\sqrt{3}\\left\\{1 - \\left(\\frac{3}{4}\\right)^7\\right\\}\\)<br><br>③ \\(\\sqrt{3}\\left\\{1 - \\left(\\frac{3}{8}\\right)^8\\right\\}\\)<br><br>④ \\(\\sqrt{3}\\left\\{1 - \\left(\\frac{3}{4}\\right)^8\\right\\}\\)<br><br>⑤ \\(\\sqrt{3}\\left\\{1 - \\left(\\frac{3}{8}\\right)^9\\right\\}\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q21. 인구가 해마다 일정한 비율로 증가하는 도시에서 \\(6\\)년 동안의<br>인구 증가율이 \\(69\\)%라 할 때, 앞으로 \\(3\\)년 동안의 인구 증가율은<br>몇 %인가?<br><br>① \\(28\\)%<br><br>② \\(30\\)%<br><br>③ \\(32\\)%<br><br>④ \\(34\\)%<br><br>⑤ \\(36\\)%", answer: "", hint: "", explanation: "" },
+            { question: "Q22. 연이율이 \\(2\\)%이고, \\(1\\)년마다 복리로 매년 초에 \\(200\\)만 원씩<br>\\(10\\)년 동안 적립할 때, \\(10\\)년 말까지 적립금의 원리합계를 구하시오.<br>(단, \\(1.02^{10} = 1.22\\)로 계산한다.)<br><br>① \\(2144\\)만원<br><br>② \\(2244\\)만원<br><br>③ \\(2344\\)만원<br><br>④ \\(2444\\)만원<br><br>⑤ \\(2544\\)만원", answer: "", hint: "", explanation: "" },
+            { question: "Q23. 수열 \\(\\{a_n\\}\\)의 일반항이 \\(a_n = \\left(\\frac{1}{2}\\right)^{n-1}\\)일 때, 다음 설명 중<br>옳은 것을 모두 고르시오.<br><br>ㄱ. 첫째항부터 제 \\(n\\)항까지의 합을 \\(S_n\\)이라고 하면 \\(a_n + S_n\\)의 값은 상수이다.<br><br>ㄴ. 수열 \\(\\{\\log_4 a_n\\}\\)은 등차수열이다.<br><br>ㄷ. 수열 \\(b_n = \\{\\sin a_n\\}\\)이라 할 때, \\(b_n < b_{n+1}\\)이다<br><br>① ㄱ<br><br>② ㄴ<br><br>③ ㄱ, ㄴ<br><br>④ ㄴ, ㄷ<br><br>⑤ ㄱ, ㄴ, ㄷ", answer: "", hint: "", explanation: "" }
+          ]}
+        ]
+      },
       {
         id: 7,
         name: "Chapter 7. 수열의 합",
-        chapters: []
+        chapterInfo: [
+          { partName: "Part1", description: "합의 기호 시그마", range: "Q1~Q11" },
+          { partName: "Part2", description: "여러가지 수열의 합", range: "Q12~Q18" }
+        ],
+        chapters: [
+          { id: 1, name: "Part1. 합의 기호 시그마", questions: [
+            { question: "Q1. 다음 첫째의 합을 시그마로 표현하시오.<br><br>(1) \\(a_5 + a_6 + a_7 + \\cdots + a_{n-3}\\)<br><br>(2) \\(25 + 28 + 31 + \\cdots + 52\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q2. 다음 시그마 기호를 첫째의 합으로 표현하고 계산도 해보시오.<br><br>(1) \\(\\sum_{k=1}^{4} 2^{k-1}\\)<br><br>(2) \\(\\sum_{j=1}^{3} 7\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q3. 등식 \\(\\sum_{m=1}^{10} \\frac{1}{m} = a + \\sum_{i=1}^{10} \\frac{1}{i+1}\\)을 만족시키는 \\(a\\)의 값은?", answer: "", hint: "", explanation: "" },
+            { question: "Q4. 수열 \\(a_n\\)에 대하여 \\(\\sum_{k=1}^{n} (a_{3k-2} + a_{3k-1} + a_{3k}) = n^2\\)이 성립할 때,<br>\\(\\sum_{k=16}^{20} a_k\\)를 구하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q5. 다음 시그마 식에서 변수와 상수를 구분한 뒤, 합으로 표현해보시<br>오.<br><br>\\(\\sum_{k=1}^{n} nk^2\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q6. 다음을 계산하시오.<br><br>(1) \\(\\sum_{j=3}^{12} (3j+1)\\)<br><br>(2) \\(\\sum_{m=1}^{13} (2m-1)\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q7. 첫째항이 \\(50\\), 공차가 \\(-4\\)인 등차수열 \\(a_n\\)에 대하여<br>\\(\\sum_{k=1}^{25} |a_k|\\)의 값을 구하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q8. 다음을 계산하시오.<br><br>(1) \\(\\sum_{k=5}^{n-2} 2^{2k-1}\\)<br><br>(2) \\(\\sum_{k=0}^{n} 3^k\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q9. 두 수열 \\(a_n\\), \\(b_n\\)이 모든 자연수 \\(n\\)에 대하여 \\(a_n + b_n = 5\\)를 만족한다.<br>\\(\\sum_{k=1}^{5} (a_k + 3b_k) = 75\\)일 때, \\(\\sum_{k=1}^{5} b_k\\) 값을 구하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q10. 수열 \\(a_n\\)에 대하여 \\(a_1 = 12\\), \\(a_{15} = 48\\)일 때,<br>\\(\\sum_{k=1}^{14} a_{k+1} - \\sum_{k=2}^{15} a_{k-1}\\)의 값을 구하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q11. \\(\\sum_{k=1}^{9} (k+1)^3 - \\sum_{k=1}^{10} (k-1)^3\\)을 계산하시오.", answer: "", hint: "", explanation: "" }
+          ]},
+          { id: 2, name: "Part2. 여러가지 수열의 합", questions: [
+            { question: "Q12. 다음을 계산하시오.<br><br>(1) \\(\\sum_{k=1}^{10} k(k+2)(k-2)\\)<br><br>(2) \\(\\sum_{j=1}^{5} \\frac{j^3}{j+2} + \\sum_{m=1}^{5} \\frac{8}{m+2}\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q13. 다음 수열의 첫째항부터 \\(n\\)항까지의 합을 구하여라.<br><br>(1) \\(2, 2+4, 2+4+6, 2+4+6+8, \\cdots\\)<br><br>(2) \\(2, 2+6, 2+6+18, 2+6+18+54, \\cdots\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q14. 수열 \\(a_n\\)에 대하여 \\(\\sum_{k=1}^{n} (a_{2k-1} + a_{2k}) = n^2 + n\\)일 때,<br>\\(a_{13} + a_{14}\\)의 값을 구하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q15. \\(\\sum_{k=1}^{n} a_k = 2^n - 1\\)일 때, \\(\\sum_{k=1}^{10} a_{2k}\\)의 값을 구하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q16. 다음을 계산하시오.<br><br>\\(\\frac{1}{2} + \\frac{1}{2+4} + \\frac{1}{2+4+6} + \\frac{1}{2+4+6+8} + \\cdots + \\frac{1}{2+4+6+\\cdots+2n}\\)", answer: "", hint: "", explanation: "" },
+            { question: "Q17. 수열 \\(a_n\\)의 일반항이 \\(a_n = \\log_3 \\frac{n}{n+1}\\)일 때,<br>\\(\\sum_{k=1}^{n} a_k = 5\\)를 만족시키는 자연수 \\(n\\)의 값은?", answer: "", hint: "", explanation: "" },
+            { question: "Q18. 다음을 계산하시오.<br><br>(1) \\(\\sum_{k=1}^{80} \\frac{1}{\\sqrt{k} + \\sqrt{k+1}}\\)<br><br>(2) \\(\\sum_{m=1}^{10} \\left\\{\\sum_{k=1}^{5} (m+2k)\\right\\}\\)", answer: "", hint: "", explanation: "" }
+          ]}
+        ]
       },
       {
         id: 8,
