@@ -189,9 +189,27 @@
         ],
         chapters: [
           { id: 1, name: "Part1. 지수", questions: [
-            { question: "Q1. \\(a\\)의 \\(n\\)제곱의 의미와 기호를 쓰시오.", answer: "", hint: "", explanation: "" },
-            { question: "Q2. \\(a\\)의 \\(n\\)제곱근의 의미를 설명하시오.<br>\\(a\\)의 \\(n\\)제곱근을 \\(x\\)라 할 때, \\(x\\)에 관한 방정식을 작성하시오.", answer: "", hint: "", explanation: "" },
-            { question: "Q3. 다음 물음에 답하시오.<br>(1) \\(8\\)의 세 제곱근을 구하시오.<br>(2) \\(16\\)의 네 제곱근 중 실수인 것을 구하시오.", answer: "", hint: "", explanation: "" },
+            { question: "Q1. \\(a\\)의 \\(n\\)제곱의 의미와 기호를 쓰시오.", answer: "", hint: "", explanation: "",
+              similarQuestions: [
+                { question: "거듭제곱의 정의를 설명하고, 이를 기호로 나타내는 방법을 쓰시오.", answer: "", hint: "", explanation: "" },
+                { question: "\\(3\\)의 \\(5\\)제곱의 의미와 기호를 쓰시오.", answer: "", hint: "", explanation: "" },
+                { question: "\\(7\\)의 \\(4\\)제곱을 기호로 나타내고, 그 의미를 설명하시오.", answer: "", hint: "", explanation: "" }
+              ]
+            },
+            { question: "Q2. \\(a\\)의 \\(n\\)제곱근의 의미를 설명하시오.<br>\\(a\\)의 \\(n\\)제곱근을 \\(x\\)라 할 때, \\(x\\)에 관한 방정식을 작성하시오.", answer: "", hint: "", explanation: "",
+              similarQuestions: [
+                { question: "\\(n\\)제곱근의 정의를 설명하고, 어떤 수의 \\(n\\)제곱근을 \\(y\\)라 할 때 만족하는 방정식을 쓰시오.", answer: "", hint: "", explanation: "" },
+                { question: "\\(64\\)의 세 제곱근의 의미를 설명하시오.<br>\\(64\\)의 세 제곱근을 \\(x\\)라 할 때, \\(x\\)에 관한 방정식을 작성하시오.", answer: "", hint: "", explanation: "" },
+                { question: "\\(81\\)의 네 제곱근이란 무엇인지 설명하시오.<br>\\(81\\)의 네 제곱근을 \\(y\\)라 할 때, \\(y\\)에 관한 방정식을 작성하시오.", answer: "", hint: "", explanation: "" }
+              ]
+            },
+            { question: "Q3. 다음 물음에 답하시오.<br>(1) \\(8\\)의 세 제곱근을 구하시오.<br>(2) \\(16\\)의 네 제곱근 중 실수인 것을 구하시오.", answer: "", hint: "", explanation: "",
+              similarQuestions: [
+                { question: "다음 물음에 답하시오.<br>(1) \\(27\\)의 세 제곱근을 구하시오.<br>(2) \\(81\\)의 네 제곱근 중 실수인 것을 구하시오.", answer: "", hint: "", explanation: "" },
+                { question: "다음 물음에 답하시오.<br>(1) \\(-64\\)의 세 제곱근 중 실수인 것을 구하시오.<br>(2) \\(625\\)의 네 제곱근 중 양수인 것을 구하시오.", answer: "", hint: "", explanation: "" },
+                { question: "다음 물음에 답하시오.<br>(1) \\(125\\)의 세 제곱근을 모두 구하시오.<br>(2) \\(256\\)의 네 제곱근 중 실수인 것을 모두 구하시오.", answer: "", hint: "", explanation: "" }
+              ]
+            },
             { question: "Q4. \\(a\\)의 \\(n\\)제곱근을 \\(x\\)라 하자. \\(n\\)이 홀수일 때, 다음 물음에 답하시오.<br>(그래프를 그려서 설명해야 합니다!)<br>(1) \\(a > 0\\)일 때 실수 \\(x\\)의 개수를 구하시오.<br>(2) \\(a = 0\\)일 때 실수 \\(x\\)의 개수를 구하시오.<br>(3) \\(a < 0\\)일 때 실수 \\(x\\)의 개수를 구하시오.", answer: "", hint: "", explanation: "" },
             { question: "Q5. \\(a\\)의 \\(n\\)제곱근을 \\(x\\)라 하자. \\(n\\)이 짝수일 때, 다음 물음에 답하시오.<br>(그래프를 그려서 설명해야 합니다!)<br>(1) \\(a > 0\\)일 때 실수 \\(x\\)의 개수를 구하시오.<br>(2) \\(a = 0\\)일 때 실수 \\(x\\)의 개수를 구하시오.<br>(3) \\(a < 0\\)일 때 실수 \\(x\\)의 개수를 구하시오.", answer: "", hint: "", explanation: "" },
             { question: "Q6. 자연수 \\(n\\) (\\(n \\geq 2\\))에 대하여 실수 \\(a\\)의 \\(n\\)제곱근 중에서 실수인 것의 개수를 \\(f_n(a)\\)라 할 때, \\(f_2(-5) + f_3(-2) + f_4(6)\\)의 값을 구하시오.", answer: "", hint: "", explanation: "" },
@@ -595,6 +613,9 @@
       // 타이머
       questionTimer: 180, // 초 단위 (3분 = 180초)
       timerInterval: null,
+      // 오답 테스트
+      isWrongAnswerTest: false,
+      wrongAnswerTestQuestions: [],
       timerExpired: false
     };
 
@@ -910,6 +931,48 @@
       state.currentTheme = themeId;
       state.currentQuestion = 0;
       state.answers = {};
+      state.isWrongAnswerTest = false;
+      state.wrongAnswerTestQuestions = [];
+      startQuestionTimer();
+      render();
+    }
+
+    function handleStartWrongAnswerTest(themeId) {
+      const category = categories.find(c => c.id === state.selectedCategory);
+      const theme = category.chapters.find(t => t.id === themeId);
+
+      // 마지막 시도의 오답 인덱스 가져오기
+      const status = getThemeStatus(state.selectedCategory, themeId);
+      const wrongIndices = status.lastAttempt?.wrongQuestionIndices || [];
+
+      // 각 오답에 대해 유사 문제를 랜덤으로 선택
+      const selectedQuestions = wrongIndices
+        .filter(idx => {
+          const q = theme.questions[idx];
+          return q && q.similarQuestions && q.similarQuestions.length > 0;
+        })
+        .map(idx => {
+          const q = theme.questions[idx];
+          const randomIdx = Math.floor(Math.random() * q.similarQuestions.length);
+          const similarQ = q.similarQuestions[randomIdx];
+          return {
+            ...similarQ,
+            originalQuestionIndex: idx,
+            originalQuestion: q.question
+          };
+        });
+
+      if (selectedQuestions.length === 0) {
+        alert('오답 문제 중 유사 문제가 없습니다.');
+        return;
+      }
+
+      // 오답 테스트 모드로 설정
+      state.isWrongAnswerTest = true;
+      state.wrongAnswerTestQuestions = selectedQuestions;
+      state.currentTheme = themeId;
+      state.currentQuestion = 0;
+      state.answers = {};
       startQuestionTimer();
       render();
     }
@@ -1008,10 +1071,12 @@
       const total = theme.questions.length;
       const percentage = Math.round((correct / total) * 100);
       
-      const wrongQuestions = theme.questions
+      const wrongQuestionsData = theme.questions
         .map((q, idx) => ({ ...q, index: idx }))
-        .filter(q => state.answers[q.index] && !state.answers[q.index].correct)
-        .map(q => q.question);
+        .filter(q => state.answers[q.index] && !state.answers[q.index].correct);
+
+      const wrongQuestions = wrongQuestionsData.map(q => q.question);
+      const wrongQuestionIndices = wrongQuestionsData.map(q => q.index);
 
       const attemptData = {
         categoryId: state.selectedCategory,
@@ -1023,6 +1088,7 @@
         total,
         percentage,
         wrongQuestions,
+        wrongQuestionIndices,
         answers: { ...state.answers }
       };
 
@@ -2000,9 +2066,23 @@
                         </button>
                       </div>
                     ` : status.status === 'retry' ? `
-                      <button data-theme="${theme.id}" class="start-btn w-full py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-xl font-bold text-white transition-all text-sm shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transform hover:scale-105 active:scale-95">
-                        퀴즈 다시 도전하기
-                      </button>
+                      <div class="space-y-3">
+                        <button data-theme="${theme.id}" class="start-btn w-full py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-xl font-bold text-white transition-all text-sm shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transform hover:scale-105 active:scale-95">
+                          퀴즈 다시 도전하기
+                        </button>
+                        ${(() => {
+                          const wrongIndices = status.lastAttempt?.wrongQuestionIndices || [];
+                          const hasWrongWithSimilar = wrongIndices.some(idx =>
+                            theme.questions[idx]?.similarQuestions &&
+                            theme.questions[idx].similarQuestions.length > 0
+                          );
+                          return hasWrongWithSimilar ? `
+                            <button data-wrong-test="${theme.id}" class="wrong-test-btn w-full py-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-xl font-bold text-white transition-all text-sm shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transform hover:scale-105 active:scale-95 flex items-center justify-center">
+                              ${icon('refresh', 'mr-2', 18)}오답테스트 보기
+                            </button>
+                          ` : '';
+                        })()}
+                      </div>
                     ` : `
                       <button data-theme="${theme.id}" class="start-btn w-full py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-xl font-bold text-white transition-all text-sm shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transform hover:scale-105 active:scale-95">
                         퀴즈 시작
@@ -2033,6 +2113,12 @@
         });
       });
 
+      document.querySelectorAll('.wrong-test-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          handleStartWrongAnswerTest(parseInt(btn.dataset.wrongTest));
+        });
+      });
+
       document.querySelectorAll('.review-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           state.showResults = true;
@@ -2048,19 +2134,23 @@
         app.innerHTML = `<div class="min-h-screen flex items-center justify-center p-6"><p class="text-white">카테고리를 찾을 수 없습니다.</p></div>`;
         return;
       }
-      
+
       const theme = category.chapters.find(t => t.id === state.currentTheme);
       if (!theme || !theme.questions) {
         app.innerHTML = `<div class="min-h-screen flex items-center justify-center p-6"><p class="text-white">테마를 찾을 수 없습니다.</p></div>`;
         return;
       }
-      
-      const question = theme.questions[state.currentQuestion];
+
+      // 오답 테스트 모드인 경우 state.wrongAnswerTestQuestions 사용
+      const questions = state.isWrongAnswerTest ? state.wrongAnswerTestQuestions : theme.questions;
+      const themeName = state.isWrongAnswerTest ? `${theme.name} - 오답 테스트` : theme.name;
+
+      const question = questions[state.currentQuestion];
       const answer = state.answers[state.currentQuestion];
       const answeredCount = Object.keys(state.answers).length;
       const correctCount = Object.values(state.answers).filter(a => a.correct).length;
       const incorrectCount = answeredCount - correctCount;
-      const isComplete = answeredCount === theme.questions.length;
+      const isComplete = answeredCount === questions.length;
 
       app.innerHTML = `
         <div class="min-h-screen p-6">
@@ -2071,15 +2161,15 @@
               </button>
             </div>
 
-            <div class="bg-gray-900 rounded-2xl p-5 mb-6 shadow-xl border border-orange-500/30">
+            <div class="bg-gray-900 rounded-2xl p-5 mb-6 shadow-xl border ${state.isWrongAnswerTest ? 'border-purple-500/30' : 'border-orange-500/30'}">
               <div class="flex items-center justify-between">
                 <div>
                   <h2 class="text-base font-bold text-white">${state.studentName}</h2>
-                  <p class="text-xs text-gray-400 mt-1 font-medium">${theme.name}</p>
+                  <p class="text-xs text-gray-400 mt-1 font-medium">${themeName}</p>
                 </div>
                 <div class="text-right">
                   <p class="text-xs text-gray-500 font-semibold">진행 상황</p>
-                  <p class="text-lg font-bold text-orange-400">${state.currentQuestion + 1} / ${theme.questions.length}</p>
+                  <p class="text-lg font-bold ${state.isWrongAnswerTest ? 'text-purple-400' : 'text-orange-400'}">${state.currentQuestion + 1} / ${questions.length}</p>
                 </div>
               </div>
             </div>
@@ -2168,45 +2258,47 @@
                 ${icon('chevronLeft', 'mr-1', 18)}이전
               </button>
               
-              ${state.currentQuestion < theme.questions.length - 1 ? `
-                <button id="nextBtn" class="flex-1 flex items-center justify-center px-5 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-xl font-bold transition-all text-white text-sm shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transform hover:scale-105 active:scale-95">
+              ${state.currentQuestion < questions.length - 1 ? `
+                <button id="nextBtn" class="flex-1 flex items-center justify-center px-5 py-3 bg-gradient-to-r ${state.isWrongAnswerTest ? 'from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700' : 'from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700'} rounded-xl font-bold transition-all text-white text-sm shadow-lg ${state.isWrongAnswerTest ? 'shadow-purple-500/30 hover:shadow-purple-500/50' : 'shadow-orange-500/30 hover:shadow-orange-500/50'} transform hover:scale-105 active:scale-95">
                   다음${icon('chevronRight', 'ml-1', 18)}
                 </button>
               ` : `
                 <button id="finishBtn" class="flex-1 px-5 py-3 rounded-xl font-bold transition-all text-sm transform ${
                   isComplete
-                    ? correctCount === theme.questions.length
+                    ? correctCount === questions.length
                       ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg shadow-green-500/30 hover:scale-105 active:scale-95'
-                      : 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/30 hover:scale-105 active:scale-95'
+                      : `bg-gradient-to-r ${state.isWrongAnswerTest ? 'from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700' : 'from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700'} text-white shadow-lg ${state.isWrongAnswerTest ? 'shadow-purple-500/30 hover:shadow-purple-500/50' : 'shadow-orange-500/30 hover:shadow-orange-500/50'} hover:scale-105 active:scale-95`
                     : 'bg-gray-800/30 cursor-not-allowed border border-gray-700 text-gray-600 scale-100'
                 }" ${!isComplete ? 'disabled' : ''}>
-                  ${isComplete ? '결과 저장하고 완료' : '모든 문제를 풀어주세요'}
+                  ${isComplete ? (state.isWrongAnswerTest ? '완료' : '결과 저장하고 완료') : '모든 문제를 풀어주세요'}
                 </button>
               `}
             </div>
 
             ${isComplete ? `
               <div class="mt-6 border-2 rounded-2xl p-6 shadow-xl ${
-                correctCount === theme.questions.length 
-                  ? 'bg-green-900/20 border-green-500/50' 
-                  : 'bg-orange-900/20 border-orange-500/50'
+                correctCount === questions.length
+                  ? 'bg-green-900/20 border-green-500/50'
+                  : state.isWrongAnswerTest
+                    ? 'bg-purple-900/20 border-purple-500/50'
+                    : 'bg-orange-900/20 border-orange-500/50'
               }">
                 <h3 class="text-xl font-bold mb-4 text-center ${
-                  correctCount === theme.questions.length ? 'text-green-400' : 'text-orange-400'
+                  correctCount === questions.length ? 'text-green-400' : state.isWrongAnswerTest ? 'text-purple-400' : 'text-orange-400'
                 }">
-                  ${correctCount === theme.questions.length ? '🎉 완벽합니다!' : '퀴즈 완료!'}
+                  ${correctCount === questions.length ? '🎉 완벽합니다!' : state.isWrongAnswerTest ? '오답 테스트 완료!' : '퀴즈 완료!'}
                 </h3>
                 <p class="text-base text-center mb-3 text-white font-medium">
-                  총 ${theme.questions.length}문제 중 <span class="text-green-400 font-bold">${correctCount}문제</span> 맞히셨습니다!
+                  총 ${questions.length}문제 중 <span class="text-green-400 font-bold">${correctCount}문제</span> 맞히셨습니다!
                 </p>
                 <p class="text-sm text-center mb-4 text-gray-300 font-medium">
                   정답률: <span class="font-bold text-lg ${
-                    correctCount === theme.questions.length ? 'text-green-400' : 'text-orange-400'
+                    correctCount === questions.length ? 'text-green-400' : state.isWrongAnswerTest ? 'text-purple-400' : 'text-orange-400'
                   }">
-                    ${Math.round((correctCount / theme.questions.length) * 100)}%
+                    ${Math.round((correctCount / questions.length) * 100)}%
                   </span>
                 </p>
-                ${correctCount < theme.questions.length ? `
+                ${!state.isWrongAnswerTest && correctCount < questions.length ? `
                   <p class="text-center text-xs text-gray-400 font-medium">
                     💡 1분 후 재도전 가능. 힌트를 복습하세요!
                   </p>
@@ -2222,6 +2314,8 @@
         state.currentTheme = null;
         state.currentQuestion = 0;
         state.answers = {};
+        state.isWrongAnswerTest = false;
+        state.wrongAnswerTestQuestions = [];
         render();
       });
 
@@ -2229,22 +2323,35 @@
         document.getElementById('prevBtn').addEventListener('click', handlePrev);
       }
 
-      if (state.currentQuestion < theme.questions.length - 1) {
+      if (state.currentQuestion < questions.length - 1) {
         document.getElementById('nextBtn').addEventListener('click', handleNext);
       } else {
         const finishBtn = document.getElementById('finishBtn');
         if (finishBtn && isComplete) {
           finishBtn.addEventListener('click', async () => {
             console.log('완료 버튼 클릭됨');
-            finishBtn.disabled = true;
-            finishBtn.textContent = '저장 중...';
-            try {
-              await handleFinishQuiz();
-            } catch (error) {
-              console.error('완료 처리 오류:', error);
-              alert('오류 발생: ' + error.message);
-              finishBtn.disabled = false;
-              finishBtn.textContent = '결과 저장하고 완료';
+
+            if (state.isWrongAnswerTest) {
+              // 오답 테스트는 결과를 저장하지 않고 테마 선택으로 돌아감
+              stopQuestionTimer();
+              state.currentTheme = null;
+              state.currentQuestion = 0;
+              state.answers = {};
+              state.isWrongAnswerTest = false;
+              state.wrongAnswerTestQuestions = [];
+              render();
+            } else {
+              // 일반 퀴즈는 결과를 저장
+              finishBtn.disabled = true;
+              finishBtn.textContent = '저장 중...';
+              try {
+                await handleFinishQuiz();
+              } catch (error) {
+                console.error('완료 처리 오류:', error);
+                alert('오류 발생: ' + error.message);
+                finishBtn.disabled = false;
+                finishBtn.textContent = '결과 저장하고 완료';
+              }
             }
           });
         }
