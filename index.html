@@ -2466,7 +2466,8 @@
       const category = categories.find(c => c.id === state.selectedCategory);
       const theme = category.chapters.find(t => t.id === state.currentTheme);
       const question = theme.questions[state.currentQuestion];
-      const isCorrect = selectedAnswer === question.answer;
+      // O/X는 선생님이 직접 평가하는 버튼 (O = 정답, X = 오답)
+      const isCorrect = selectedAnswer === 'O';
 
       const status = getThemeStatus(state.selectedCategory, state.currentTheme);
       const isRetake = status.attemptCount >= 1;
