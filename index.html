@@ -12,6 +12,7 @@
   <link rel="apple-touch-icon" href="/icon-192.png">
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -70,6 +71,7 @@
       firebase.initializeApp(firebaseConfig);
     }
     const db = firebase.firestore();
+    const storage = firebase.storage();
 
     // 아이콘 정의
     const icons = {
@@ -122,7 +124,13 @@
       sessionTimes: {}, // 세션별 시간 기록 { questionIndex: timeInSeconds }
       sessionMemos: {}, // 세션별 메모 { questionIndex: memo }
       currentSessionId: null, // 현재 세션 ID
-      testHistory: [] // 학생의 전체 테스트 기록
+      testHistory: [], // 학생의 전체 테스트 기록
+      // Canvas 관련
+      canvasData: {}, // 문제별 필기 데이터 { questionIndex: imageUrl }
+      currentCanvas: null, // 현재 그리기 중인 canvas 참조
+      penColor: '#000000', // 펜 색상
+      penSize: 3, // 펜 굵기
+      isDrawing: false // 그리기 중인지 여부
     };
 
     // 카테고리 데이터
@@ -1395,6 +1403,163 @@
       }
     }
 
+    // ===== Canvas 드로잉 관련 함수 =====
+
+    function initCanvas(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return null;
+
+      const ctx = canvas.getContext('2d');
+
+      // 고해상도 디스플레이 지원
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+
+      // Canvas 스타일 설정
+      canvas.style.width = rect.width + 'px';
+      canvas.style.height = rect.height + 'px';
+
+      // 배경 흰색으로 초기화
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // 기본 펜 설정
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = state.penColor;
+      ctx.lineWidth = state.penSize;
+
+      state.currentCanvas = canvas;
+      setupCanvasEvents(canvasId);
+
+      return canvas;
+    }
+
+    function setupCanvasEvents(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      const rect = canvas.getBoundingClientRect();
+      let isDrawing = false;
+      let lastX = 0;
+      let lastY = 0;
+
+      function getCoordinates(e) {
+        const rect = canvas.getBoundingClientRect();
+        if (e.touches && e.touches[0]) {
+          return {
+            x: e.touches[0].clientX - rect.left,
+            y: e.touches[0].clientY - rect.top
+          };
+        }
+        return {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+        };
+      }
+
+      function startDrawing(e) {
+        e.preventDefault();
+        isDrawing = true;
+        const coords = getCoordinates(e);
+        lastX = coords.x;
+        lastY = coords.y;
+      }
+
+      function draw(e) {
+        if (!isDrawing) return;
+        e.preventDefault();
+
+        const coords = getCoordinates(e);
+        ctx.strokeStyle = state.penColor;
+        ctx.lineWidth = state.penSize;
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(coords.x, coords.y);
+        ctx.stroke();
+
+        lastX = coords.x;
+        lastY = coords.y;
+      }
+
+      function stopDrawing(e) {
+        if (isDrawing) {
+          e.preventDefault();
+          isDrawing = false;
+        }
+      }
+
+      // 터치 이벤트
+      canvas.addEventListener('touchstart', startDrawing, { passive: false });
+      canvas.addEventListener('touchmove', draw, { passive: false });
+      canvas.addEventListener('touchend', stopDrawing, { passive: false });
+      canvas.addEventListener('touchcancel', stopDrawing, { passive: false });
+
+      // 마우스 이벤트
+      canvas.addEventListener('mousedown', startDrawing);
+      canvas.addEventListener('mousemove', draw);
+      canvas.addEventListener('mouseup', stopDrawing);
+      canvas.addEventListener('mouseleave', stopDrawing);
+    }
+
+    function clearCanvas() {
+      const canvas = state.currentCanvas;
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      const rect = canvas.getBoundingClientRect();
+
+      // 배경 흰색으로 초기화
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      render();
+    }
+
+    function changePenColor(color) {
+      state.penColor = color;
+      render();
+    }
+
+    function changePenSize(size) {
+      state.penSize = size;
+      render();
+    }
+
+    async function uploadCanvasImage(canvas, studentId, questionIndex) {
+      try {
+        // Canvas를 Blob으로 변환
+        const blob = await new Promise(resolve => {
+          canvas.toBlob(resolve, 'image/png', 0.8);
+        });
+
+        // Firebase Storage에 업로드
+        const filename = `handwriting/${studentId}/q${questionIndex}_${Date.now()}.png`;
+        const storageRef = storage.ref(filename);
+        const snapshot = await storageRef.put(blob);
+        const downloadUrl = await snapshot.ref.getDownloadURL();
+
+        return downloadUrl;
+      } catch (error) {
+        console.error('이미지 업로드 오류:', error);
+        throw error;
+      }
+    }
+
+    async function deleteCanvasImage(imageUrl) {
+      try {
+        if (!imageUrl) return;
+        const storageRef = storage.refFromURL(imageUrl);
+        await storageRef.delete();
+      } catch (error) {
+        console.error('이미지 삭제 오류:', error);
+      }
+    }
+
     async function resetStudentPassword(studentId, newPassword) {
       try {
         await db.collection('auth_students').doc(studentId).update({
@@ -2315,6 +2480,63 @@
                 <div class="text-lg leading-relaxed text-white">${currentQuestion.question}</div>
               </div>
 
+              <!-- Canvas 드로잉 영역 -->
+              <div class="mb-6">
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="text-white font-semibold flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                    </svg>
+                    필기 영역
+                  </h3>
+                  <button
+                    onclick="clearCanvas()"
+                    class="text-sm bg-red-500/20 hover:bg-red-500/30 text-red-400 px-3 py-1 rounded-lg transition-all"
+                  >
+                    전체 지우기
+                  </button>
+                </div>
+
+                <!-- Canvas -->
+                <canvas
+                  id="drawingCanvas"
+                  class="w-full bg-white rounded-xl mb-3 touch-none"
+                  style="height: 300px; border: 2px solid #374151;"
+                ></canvas>
+
+                <!-- 펜 도구 -->
+                <div class="flex items-center gap-4 bg-gray-900/50 p-3 rounded-xl">
+                  <!-- 펜 색상 -->
+                  <div class="flex items-center gap-2">
+                    <span class="text-gray-400 text-sm">색상:</span>
+                    <div class="flex gap-2">
+                      ${['#000000', '#FF0000', '#0000FF', '#00AA00', '#FF6B00'].map(color => `
+                        <button
+                          onclick="changePenColor('${color}')"
+                          class="w-8 h-8 rounded-full border-2 ${state.penColor === color ? 'border-white ring-2 ring-orange-400' : 'border-gray-600'} transition-all"
+                          style="background-color: ${color};"
+                        ></button>
+                      `).join('')}
+                    </div>
+                  </div>
+
+                  <!-- 펜 굵기 -->
+                  <div class="flex items-center gap-2">
+                    <span class="text-gray-400 text-sm">굵기:</span>
+                    <div class="flex gap-2">
+                      ${[2, 3, 5, 8].map(size => `
+                        <button
+                          onclick="changePenSize(${size})"
+                          class="w-8 h-8 rounded-lg flex items-center justify-center ${state.penSize === size ? 'bg-orange-500 text-white' : 'bg-gray-700 text-gray-300'} transition-all"
+                        >
+                          ${size}
+                        </button>
+                      `).join('')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <!-- 버튼들 -->
               <div class="flex gap-3">
                 ${state.currentQuestionIndex > 0 ? `
@@ -2561,6 +2783,17 @@
                                       <span class="text-xs text-yellow-300">💬 ${q.memo}</span>
                                     </div>
                                   ` : ''}
+                                  ${q.imageUrl ? `
+                                    <div class="mt-3">
+                                      <p class="text-xs text-gray-400 mb-2">✏️ 학생 필기</p>
+                                      <img
+                                        src="${q.imageUrl}"
+                                        alt="필기 이미지"
+                                        class="w-full rounded-lg border border-gray-600 cursor-pointer hover:border-orange-400 transition-all"
+                                        onclick="window.open('${q.imageUrl}', '_blank')"
+                                      />
+                                    </div>
+                                  ` : ''}
                                 </div>
                               </div>
                             </div>
@@ -2585,6 +2818,7 @@
       state.currentView = 'quiz';
       state.sessionTimes = {}; // 세션 시간 초기화
       state.sessionMemos = {}; // 세션 메모 초기화
+      state.canvasData = {}; // Canvas 데이터 초기화
       state.questionStartTime = Date.now(); // 타이머 시작
       render();
     }
@@ -2657,6 +2891,22 @@
         return;
       }
 
+      // Canvas 이미지 업로드
+      let imageUrl = null;
+      if (state.currentCanvas) {
+        try {
+          imageUrl = await uploadCanvasImage(
+            state.currentCanvas,
+            state.selectedStudent.id,
+            state.currentQuestionIndex
+          );
+          state.canvasData[state.currentQuestionIndex] = imageUrl;
+        } catch (error) {
+          console.error('필기 이미지 저장 오류:', error);
+          // 이미지 저장 실패해도 진행 계속
+        }
+      }
+
       // 현재 진도 가져오기
       let chapterProgress = state.progress[progressKey] || { completedQuestions: [] };
 
@@ -2704,7 +2954,8 @@
           questionNumber: parseInt(qIdx) + 1,
           questionText: chapter.questions[parseInt(qIdx)]?.question || '',
           time: time,
-          memo: state.sessionMemos[qIdx] || ''
+          memo: state.sessionMemos[qIdx] || '',
+          imageUrl: state.canvasData[qIdx] || null
         }));
 
         try {
@@ -2728,6 +2979,7 @@
       state.currentQuestionIndex = 0;
       state.sessionTimes = {};
       state.sessionMemos = {};
+      state.canvasData = {};
       render();
     }
 
@@ -2838,6 +3090,13 @@
           ],
           throwOnError: false
         });
+      }
+
+      // Canvas 초기화 (quiz 뷰일 때만)
+      if (state.currentView === 'quiz') {
+        setTimeout(() => {
+          initCanvas('drawingCanvas');
+        }, 0);
       }
     }
 
