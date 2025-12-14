@@ -2009,6 +2009,9 @@
       isEraserMode: false, // 지우개 모드 여부
       // 퀴즈 진행 관련
       quizStartTime: null, // 퀴즈 시작 시간
+      questionStartTime: null, // 현재 문제 시작 시간
+      questionTimes: {}, // 각 문제별 소요 시간 { questionIndex: timeInMs }
+      timerInterval: null, // 타이머 인터벌
       teacherNotes: {} // 선생님 메모 { themeId: { questionIndex: "메모 내용" } }
     };
 
@@ -2205,6 +2208,79 @@
 
     function changePenSize(size) {
       state.penSize = size;
+    }
+
+    // ===== 타이머 관련 함수 =====
+    function startQuestionTimer() {
+      state.questionStartTime = Date.now();
+
+      // 기존 타이머가 있으면 제거
+      if (state.timerInterval) {
+        clearInterval(state.timerInterval);
+      }
+
+      // 1초마다 타이머 업데이트
+      state.timerInterval = setInterval(() => {
+        updateTimerDisplay();
+      }, 1000);
+    }
+
+    function stopQuestionTimer() {
+      if (state.timerInterval) {
+        clearInterval(state.timerInterval);
+        state.timerInterval = null;
+      }
+    }
+
+    function saveQuestionTime(questionIndex) {
+      if (state.questionStartTime) {
+        const elapsed = Date.now() - state.questionStartTime;
+        state.questionTimes[questionIndex] = elapsed;
+      }
+    }
+
+    function updateTimerDisplay() {
+      const timerElement = document.getElementById('questionTimer');
+      if (!timerElement || !state.questionStartTime) return;
+
+      const elapsed = Date.now() - state.questionStartTime;
+      const totalSeconds = Math.floor(elapsed / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+
+      // 3분(180초) 제한
+      const remainingSeconds = 180 - totalSeconds;
+
+      if (remainingSeconds <= 0) {
+        timerElement.textContent = '0:00';
+        timerElement.classList.add('text-red-500', 'animate-pulse');
+        stopQuestionTimer();
+      } else {
+        const displayMinutes = Math.floor(remainingSeconds / 60);
+        const displaySeconds = remainingSeconds % 60;
+        timerElement.textContent = `${displayMinutes}:${displaySeconds.toString().padStart(2, '0')}`;
+
+        // 30초 이하면 빨간색 경고
+        if (remainingSeconds <= 30) {
+          timerElement.classList.add('text-red-500');
+        } else {
+          timerElement.classList.remove('text-red-500');
+        }
+      }
+    }
+
+    function getTotalQuestionTime() {
+      // 응답한 문제들의 시간만 합산
+      return Object.keys(state.answers).reduce((total, questionIndex) => {
+        return total + (state.questionTimes[questionIndex] || 0);
+      }, 0);
+    }
+
+    function formatTime(milliseconds) {
+      const totalSeconds = Math.floor(milliseconds / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      return `${minutes}분 ${seconds}초`;
     }
 
     async function uploadCanvasImage(canvas, studentId, questionIndex) {
@@ -2556,9 +2632,13 @@
       state.currentQuestion = 0;
       state.answers = {};
       state.quizStartTime = Date.now(); // 퀴즈 시작 시간 기록
+      state.questionTimes = {}; // 문제별 시간 초기화
       state.canvasStrokes = []; // 캔버스 획 초기화
       state.isEraserMode = false; // 지우개 모드 해제
+      stopQuestionTimer(); // 기존 타이머 정리
       render();
+      // render 후 타이머 시작
+      setTimeout(() => startQuestionTimer(), 100);
     }
 
     async function handleAnswer(selectedAnswer) {
@@ -2589,6 +2669,9 @@
         }
       }
 
+      // 문제 시간 저장 (답변할 때만)
+      saveQuestionTime(key);
+
       state.answers[key] = {
         selected: selectedAnswer,
         correct: isCorrect,
@@ -2602,23 +2685,52 @@
       const category = categories.find(c => c.id === state.selectedCategory);
       const theme = category.chapters.find(t => t.id === state.currentTheme);
       if (state.currentQuestion < theme.questions.length - 1) {
+        // 현재 문제가 아직 답변 안 되었으면 시간 저장 (건너뛸 때)
+        if (!state.answers[state.currentQuestion]) {
+          saveQuestionTime(state.currentQuestion);
+        }
+
         state.currentQuestion++;
         state.canvasStrokes = []; // 다음 문제로 이동 시 캔버스 획 초기화
         state.isEraserMode = false; // 지우개 모드 해제
+
+        // 다음 문제의 타이머 시작 (아직 답변 안 한 문제만)
+        if (!state.answers[state.currentQuestion]) {
+          stopQuestionTimer();
+          setTimeout(() => startQuestionTimer(), 100);
+        }
+
         render();
       }
     }
 
     function handlePrev() {
       if (state.currentQuestion > 0) {
+        // 현재 문제가 아직 답변 안 되었으면 시간 저장
+        if (!state.answers[state.currentQuestion]) {
+          saveQuestionTime(state.currentQuestion);
+        }
+
         state.currentQuestion--;
         state.canvasStrokes = []; // 이전 문제로 이동 시 캔버스 획 초기화
         state.isEraserMode = false; // 지우개 모드 해제
+
+        // 이전 문제의 타이머 시작 (아직 답변 안 한 문제만)
+        if (!state.answers[state.currentQuestion]) {
+          stopQuestionTimer();
+          setTimeout(() => startQuestionTimer(), 100);
+        }
+
         render();
       }
     }
 
     async function handleFinishQuiz() {
+      console.log('=== handleFinishQuiz 시작 ===');
+
+      // 타이머 정리
+      stopQuestionTimer();
+
       const category = categories.find(c => c.id === state.selectedCategory);
       const theme = category.chapters.find(t => t.id === state.currentTheme);
       const answeredCount = Object.keys(state.answers).length;
@@ -2635,8 +2747,11 @@
       // 응답한 문제 번호 목록
       const answeredQuestions = Object.keys(state.answers).map(Number).sort((a, b) => a - b);
 
-      // 총 소요 시간 계산 (밀리초)
-      const totalTime = state.quizStartTime ? Date.now() - state.quizStartTime : 0;
+      // 총 소요 시간 계산 - 응답한 문제들의 시간만 합산
+      const totalTime = getTotalQuestionTime();
+      console.log('응답한 문제:', answeredQuestions);
+      console.log('각 문제 소요 시간:', state.questionTimes);
+      console.log('총 소요 시간:', formatTime(totalTime));
 
       const attemptData = {
         categoryId: state.selectedCategory,
@@ -2651,9 +2766,12 @@
         percentage,
         wrongQuestions,
         answers: { ...state.answers },
-        totalTime, // 총 소요 시간 (밀리초)
+        totalTime, // 총 소요 시간 (밀리초) - 응답한 문제들의 합
+        questionTimes: { ...state.questionTimes }, // 각 문제별 소요 시간
         teacherNotes: state.teacherNotes[state.currentTheme] || {} // 선생님 메모
       };
+
+      console.log('저장할 attemptData:', attemptData);
 
       // 선생님이 학생의 테스트를 진행한 경우, 학생 데이터에 저장
       const targetStudentName = (state.userType === 'admin' && state.selectedStudent)
@@ -2689,7 +2807,13 @@
         ? state.selectedStudent.id
         : state.uid;
 
+      console.log('저장 시작 - targetStudentName:', targetStudentName);
+      console.log('저장 시작 - saveUid:', saveUid);
+      console.log('저장할 newData:', newData);
+
       await saveData(newData, saveUid);
+
+      console.log('저장 완료!');
 
       // 선생님이 진행한 경우, selectedStudent 데이터도 업데이트
       if (state.userType === 'admin' && state.selectedStudent) {
@@ -2700,7 +2824,9 @@
       state.currentQuestion = 0;
       state.answers = {};
       state.quizStartTime = null;
+      state.questionTimes = {}; // 문제별 시간 초기화
       state.selectedCategory = null;
+      console.log('=== handleFinishQuiz 완료 ===');
       render();
     }
 
@@ -3954,9 +4080,19 @@
 
             <div class="bg-gray-900 rounded-2xl p-8 border border-gray-800 shadow-xl mb-6">
               <div class="mb-8">
-                <span class="inline-block px-3 py-1 bg-orange-500/20 text-orange-400 rounded-lg text-xs font-bold mb-4">
-                  문제 ${state.currentQuestion + 1}
-                </span>
+                <div class="flex items-center justify-between mb-4">
+                  <span class="inline-block px-3 py-1 bg-orange-500/20 text-orange-400 rounded-lg text-xs font-bold">
+                    문제 ${state.currentQuestion + 1}
+                  </span>
+                  ${!answer ? `
+                    <div class="flex items-center gap-2 px-4 py-2 bg-blue-500/20 rounded-lg border border-blue-500/30">
+                      <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                      </svg>
+                      <span id="questionTimer" class="text-lg font-bold text-blue-400">3:00</span>
+                    </div>
+                  ` : ''}
+                </div>
                 <p class="text-lg leading-relaxed text-white font-medium">${question.question}</p>
               </div>
 
@@ -4285,6 +4421,26 @@
                               <p class="text-xs text-gray-300">
                                 ${lastAttempt.answeredQuestions.map(i => `Q${i+1}`).join(', ')}
                               </p>
+                            </div>
+                          ` : ''}
+
+                          ${lastAttempt.questionTimes && Object.keys(lastAttempt.questionTimes).length > 0 ? `
+                            <div class="mb-4 px-4 py-2 bg-purple-900/20 border border-purple-500/30 rounded-xl">
+                              <p class="text-xs text-purple-400 font-semibold mb-2">문제별 소요 시간:</p>
+                              <div class="grid grid-cols-4 gap-2">
+                                ${lastAttempt.answeredQuestions.map(qIdx => {
+                                  const timeMs = lastAttempt.questionTimes[qIdx] || 0;
+                                  const mins = Math.floor(timeMs / 60000);
+                                  const secs = Math.floor((timeMs % 60000) / 1000);
+                                  const timeStr = mins > 0 ? `${mins}:${secs.toString().padStart(2, '0')}` : `${secs}초`;
+                                  return `
+                                    <div class="text-xs bg-gray-900/50 px-2 py-1 rounded">
+                                      <span class="text-gray-400">Q${qIdx+1}:</span>
+                                      <span class="text-purple-300 font-semibold ml-1">${timeStr}</span>
+                                    </div>
+                                  `;
+                                }).join('')}
+                              </div>
                             </div>
                           ` : ''}
 
