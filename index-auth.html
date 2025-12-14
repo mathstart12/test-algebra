@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>구두테스트 퀴즈 - 대수 (Firebase)</title>
+  <title>구두테스트 퀴즈 - 선생님/학생 (Firebase)</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#f97316">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -23,13 +23,11 @@
     }
     .icon { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; }
 
-    /* 수식 렌더링 중에도 화면은 보이도록 */
     #app {
       visibility: visible;
       opacity: 1;
     }
 
-    /* KaTeX 지수 크기 및 위치 조정 */
     .katex .msupsub {
       font-size: 0.75em;
     }
@@ -48,7 +46,7 @@
       *:active, *:focus, *:hover {
         outline: none !important;
         border-color: inherit !important;
-        box-shadow: inherit !important;
+        background-color: inherit !important;
         transform: none !important;
       }
     }
@@ -73,110 +71,44 @@
     }
     const db = firebase.firestore();
 
-    let offlineDB;
-
-    // 관리자 보안 키 (실제 사용시 환경변수나 안전한 곳에 보관)
-    const ADMIN_SECRET_KEY = "MATH2025ADMIN";
-    const ADMIN_PASSWORD = "teacher2025"; // 관리자 공통 비밀번호
-
-    // 학생 상태: 'active' (재원생), 'withdrawn' (퇴원생)
-    
-    // 아이콘 SVG
+    // 아이콘 정의
     const icons = {
-      user: '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"/>',
-      bookOpen: '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
-      chevronLeft: '<path d="m15 18-6-6 6-6"/>',
-      chevronRight: '<path d="m9 18 6-6-6-6"/>',
-      home: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10"/>',
-      barChart: '<path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/>',
-      award: '<path d="M8.21 13.89 7 23l5-3 5 3-1.21-9.12M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>',
-      lock: '<path d="M7 11V7a5 5 0 0 1 10 0v4M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z"/>',
-      checkCircle: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3"/>',
-      xCircle: '<circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>',
-      clock: '<path d="M12 6v6l4 2M22 12A10 10 0 1 1 2 12a10 10 0 0 1 20 0Z"/>',
-      users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"/>',
-      settings: '<circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m6.36 6.36 4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m6.36-6.36 4.24-4.24"/>'
+      user: '<circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/>',
+      lock: '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+      unlock: '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>',
+      logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
+      plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+      trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+      check: '<polyline points="20 6 9 17 4 12"/>',
+      x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+      chevronLeft: '<polyline points="15 18 9 12 15 6"/>',
+      chevronRight: '<polyline points="9 18 15 12 9 6"/>',
+      settings: '<circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m6.36 6.36l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m6.36-6.36l4.24-4.24"/>',
+      key: '<path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>'
     };
 
     function icon(type, className = '', size = 24) {
       return `<svg class="${className}" style="width:${size}px;height:${size}px;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${icons[type]}</svg>`;
     }
 
-    // IndexedDB 초기화
-    function initIndexedDB() {
-      return new Promise((resolve, reject) => {
-        const request = indexedDB.open('OXQuizDB', 1);
-        
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => {
-          offlineDB = request.result;
-          resolve(offlineDB);
-        };
-        
-        request.onupgradeneeded = (event) => {
-          const db = event.target.result;
-          if (!db.objectStoreNames.contains('pendingData')) {
-            db.createObjectStore('pendingData', { keyPath: 'id', autoIncrement: true });
-          }
-        };
-      });
-    }
-
-    async function saveToIndexedDB(data) {
-      return new Promise((resolve, reject) => {
-        const transaction = offlineDB.transaction(['pendingData'], 'readwrite');
-        const store = transaction.objectStore('pendingData');
-        const request = store.add({
-          uid: state.uid,
-          data: data,
-          timestamp: Date.now()
-        });
-        
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
-      });
-    }
-
-    async function deleteFromIndexedDB(id) {
-      return new Promise((resolve, reject) => {
-        const transaction = offlineDB.transaction(['pendingData'], 'readwrite');
-        const store = transaction.objectStore('pendingData');
-        const request = store.delete(id);
-        
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
-      });
-    }
-
-    async function syncPendingData() {
-      try {
-        const transaction = offlineDB.transaction(['pendingData'], 'readonly');
-        const store = transaction.objectStore('pendingData');
-        const request = store.getAll();
-        
-        request.onsuccess = async () => {
-          const pendingItems = request.result;
-          
-          for (const item of pendingItems) {
-            try {
-              await db.collection('students').doc(item.uid).set(item.data);
-              await deleteFromIndexedDB(item.id);
-              console.log('동기화 완료:', item.id);
-            } catch (error) {
-              console.error('동기화 실패:', error);
-            }
-          }
-          
-          if (pendingItems.length > 0) {
-            alert(`${pendingItems.length}개의 데이터가 동기화되었습니다!`);
-            await loadData(state.uid);
-            render();
-          }
-        };
-      } catch (error) {
-        console.error('동기화 오류:', error);
-      }
-    }
+    // State 관리
+    const state = {
+      isLoggedIn: false,
+      userType: null, // 'teacher' 또는 'student'
+      userId: null,
+      userName: null,
+      selectedStudent: null, // 선생님이 선택한 학생
+      students: [], // 선생님의 학생 목록
+      currentView: 'login', // 'login', 'teacherHome', 'studentHome', 'quiz', 'register'
+      currentCategory: null,
+      currentChapter: null,
+      currentQuestionIndex: 0,
+      showingSimilar: false,
+      similarIndex: 0,
+      progress: {}, // 학생의 진도 데이터
+      loading: false,
+      registerType: null // 'teacher' 또는 'student'
+    };
 
     // 카테고리 데이터
     const categories = [
@@ -1302,2144 +1234,1319 @@
       }
     ];
 
-    // 상태 관리
-    const state = {
-      userType: null, // 'student' or 'admin'
-      studentName: '',
-      phone: '',
-      teacherName: '', // 학생의 담당 선생님
-      adminName: '', // 관리자 이름
-      isLoggedIn: false,
-      uid: '',
-      loading: false,
-      selectedCategory: null,
-      currentTheme: null,
-      currentQuestion: 0,
-      answers: {},
-      allStudentData: {},
-      showResults: false,
-      lockTimers: {},
-      currentTime: Date.now(),
-      autoLogin: false,
-      // 관리자 전용
-      adminStudents: [], // 관리자가 담당하는 학생 목록
-      selectedStudent: null, // 관리자가 선택한 학생
-      showAdminRegister: false,
-      studentStatusFilter: 'active', // 'active' (재원생) 또는 'withdrawn' (퇴원생)
-      // 학습 기록 전용
-      recordSelectedCategory: null, // 학습 기록에서 선택한 카테고리
-      // 선생님 메모
-      teacherNotes: {}, // { themeId: { questionIndex: "메모 내용" } }
-      // 타이머
-      questionTimer: 180, // 초 단위 (3분 = 180초)
-      timerInterval: null,
-      // 오답 테스트
-      isWrongAnswerTest: false,
-      wrongAnswerTestQuestions: [],
-      timerExpired: false
-    };
-
-    // 자동 로그인 체크
-    function checkAutoLogin() {
-      // 학생 자동 로그인 체크
-      const savedName = localStorage.getItem('ox_quiz_student_name');
-      const savedPhone = localStorage.getItem('ox_quiz_student_phone');
-      const savedTeacher = localStorage.getItem('ox_quiz_teacher_name');
-      const studentAutoLoginEnabled = localStorage.getItem('ox_quiz_auto_login') === 'true';
-
-      if (studentAutoLoginEnabled && savedName && savedPhone) {
-        console.log('학생 자동 로그인 시도:', savedName);
-        state.studentName = savedName;
-        state.phone = savedPhone;
-        state.teacherName = savedTeacher || '';
-        state.autoLogin = true;
-        state.userType = 'student';
-        return { type: 'student' };
-      }
-
-      // 관리자 자동 로그인 체크
-      const savedAdminName = localStorage.getItem('ox_quiz_admin_name');
-      const adminAutoLoginEnabled = localStorage.getItem('ox_quiz_admin_auto_login') === 'true';
-
-      if (adminAutoLoginEnabled && savedAdminName) {
-        console.log('관리자 자동 로그인 시도:', savedAdminName);
-        state.adminName = savedAdminName;
-        state.autoLogin = true;
-        state.userType = 'admin';
-        return { type: 'admin', name: savedAdminName };
-      }
-
-      return null;
-    }
-
-    // 로그인 정보 저장
-    function saveLoginInfo(name, phone, teacher, autoLogin) {
-      localStorage.setItem('ox_quiz_student_name', name);
-      localStorage.setItem('ox_quiz_student_phone', phone);
-      localStorage.setItem('ox_quiz_teacher_name', teacher);
-      localStorage.setItem('ox_quiz_auto_login', autoLogin ? 'true' : 'false');
-    }
-
-    // 로그아웃
-    function logout() {
-      localStorage.removeItem('ox_quiz_student_name');
-      localStorage.removeItem('ox_quiz_student_phone');
-      localStorage.removeItem('ox_quiz_teacher_name');
-      localStorage.removeItem('ox_quiz_auto_login');
-      localStorage.removeItem('ox_quiz_admin_name');
-      localStorage.removeItem('ox_quiz_admin_auto_login');
-      state.isLoggedIn = false;
-      state.userType = null;
-      state.studentName = '';
-      state.phone = '';
-      state.teacherName = '';
-      state.adminName = '';
-      state.uid = '';
-      state.selectedCategory = null;
-      state.currentTheme = null;
-      state.autoLogin = false;
-      state.adminStudents = [];
-      state.selectedStudent = null;
-      render();
-    }
-
-    // Firebase 함수
-    async function loadData(id) {
+    // Firebase 헬퍼 함수들
+    async function teacherLogin(name, key) {
       try {
-        const doc = await db.collection('students').doc(id).get();
-        if (doc.exists) {
-          const studentData = doc.data();
-          state.allStudentData[state.studentName] = studentData;
-          state.lockTimers = studentData.lockTimers || {};
-          // 기존 데이터에서 teacherName 가져오기
-          if (!state.teacherName && studentData.teacherName) {
-            state.teacherName = studentData.teacherName;
-          }
-        } else {
-          state.allStudentData[state.studentName] = { 
-            attempts: [],
-            lockTimers: {},
-            teacherName: state.teacherName,
-            studentName: state.studentName,
-            phone: state.phone,
-            status: 'active' // 신규 학생은 재원생으로 시작
-          };
-          state.lockTimers = {};
+        const userDoc = await db.collection('users').doc(name).get();
+
+        if (!userDoc.exists) {
+          throw new Error('등록되지 않은 선생님입니다.');
         }
-        console.log('데이터 로드 완료:', state.allStudentData[state.studentName]);
-      } catch (error) {
-        console.error('데이터 로드 오류:', error);
-        state.allStudentData[state.studentName] = { 
-          attempts: [],
-          lockTimers: {},
-          teacherName: state.teacherName,
-          studentName: state.studentName,
-          phone: state.phone,
-          status: 'active'
-        };
-        state.lockTimers = {};
-      }
-    }
 
-    async function saveData(newData) {
-      try {
-        if (navigator.onLine) {
-          await db.collection('students').doc(state.uid).set(newData);
-          console.log('온라인 저장 완료');
-        } else {
-          await saveToIndexedDB(newData);
-          console.log('오프라인 임시 저장 완료');
-          alert('오프라인 상태입니다. 온라인 복구 시 자동으로 동기화됩니다.');
+        const userData = userDoc.data();
+        if (userData.role !== 'teacher') {
+          throw new Error('선생님 계정이 아닙니다.');
         }
+
+        if (userData.key !== key) {
+          throw new Error('비밀번호가 일치하지 않습니다.');
+        }
+
+        return userData;
       } catch (error) {
-        console.error('데이터 저장 오류:', error);
-        await saveToIndexedDB(newData);
-        alert('데이터를 로컬에 임시 저장했습니다.');
+        throw error;
       }
     }
 
-    // 관리자 함수
-    async function loadAdminStudents(teacherName) {
+    async function studentLogin(name, password) {
       try {
-        const snapshot = await db.collection('students')
-          .where('teacherName', '==', teacherName)
+        // students 컬렉션에서 name으로 검색
+        const studentsSnapshot = await db.collection('students')
+          .where('name', '==', name)
+          .limit(1)
           .get();
-        
-        const students = [];
-        snapshot.forEach(doc => {
-          students.push({
-            id: doc.id,
-            ...doc.data()
-          });
+
+        if (studentsSnapshot.empty) {
+          throw new Error('등록되지 않은 학생입니다.');
+        }
+
+        const studentDoc = studentsSnapshot.docs[0];
+        const studentData = studentDoc.data();
+
+        if (studentData.password !== password) {
+          throw new Error('비밀번호가 일치하지 않습니다.');
+        }
+
+        return {
+          id: studentDoc.id,
+          ...studentData
+        };
+      } catch (error) {
+        throw error;
+      }
+    }
+
+    async function registerTeacher(name, key) {
+      try {
+        // 이미 존재하는지 확인
+        const userDoc = await db.collection('users').doc(name).get();
+        if (userDoc.exists) {
+          throw new Error('이미 등록된 이름입니다.');
+        }
+
+        await db.collection('users').doc(name).set({
+          role: 'teacher',
+          name: name,
+          key: key,
+          createdAt: new Date().toISOString()
         });
-        
-        state.adminStudents = students;
-        console.log('학생 목록 로드 완료:', students.length, '명');
+
+        return { role: 'teacher', name, key };
+      } catch (error) {
+        throw error;
+      }
+    }
+
+    async function loadTeacherStudents(teacherName) {
+      try {
+        const studentsSnapshot = await db.collection('students')
+          .where('createdBy', '==', teacherName)
+          .orderBy('createdAt', 'desc')
+          .get();
+
+        return studentsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
       } catch (error) {
         console.error('학생 목록 로드 오류:', error);
-        state.adminStudents = [];
+        return [];
       }
     }
 
-    async function registerAdmin(adminName, secretKey) {
-      if (secretKey !== ADMIN_SECRET_KEY) {
-        alert('보안 키가 올바르지 않습니다.');
-        return false;
-      }
-
+    async function addStudent(teacherName, studentName, password) {
       try {
-        const adminId = `admin_${adminName}`;
-        // students 컬렉션에 관리자 정보 저장 (isAdmin: true 플래그 추가)
-        await db.collection('students').doc(adminId).set({
-          name: adminName,
-          isAdmin: true,
-          registeredAt: new Date().toISOString()
+        // 이름 중복 체크
+        const existingStudent = await db.collection('students')
+          .where('name', '==', studentName)
+          .limit(1)
+          .get();
+
+        if (!existingStudent.empty) {
+          throw new Error('이미 등록된 학생 이름입니다.');
+        }
+
+        const studentRef = await db.collection('students').add({
+          name: studentName,
+          password: password,
+          createdBy: teacherName,
+          createdAt: new Date().toISOString()
         });
-        
-        alert('관리자 등록이 완료되었습니다!');
+
+        return {
+          id: studentRef.id,
+          name: studentName,
+          password: password,
+          createdBy: teacherName
+        };
+      } catch (error) {
+        throw error;
+      }
+    }
+
+    async function deleteStudent(studentId) {
+      try {
+        // 학생 삭제
+        await db.collection('students').doc(studentId).delete();
+
+        // 해당 학생의 모든 진도 데이터 삭제
+        const progressSnapshot = await db.collection('progress')
+          .where('studentId', '==', studentId)
+          .get();
+
+        const batch = db.batch();
+        progressSnapshot.docs.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+        await batch.commit();
+
         return true;
       } catch (error) {
-        console.error('관리자 등록 오류:', error);
-        alert('관리자 등록 중 오류가 발생했습니다: ' + error.message);
-        return false;
+        throw error;
       }
     }
 
-    async function checkAdminExists(adminName) {
+    async function resetStudentPassword(studentId, newPassword) {
       try {
-        const adminId = `admin_${adminName}`;
-        const doc = await db.collection('students').doc(adminId).get();
-        return doc.exists && doc.data()?.isAdmin === true;
+        await db.collection('students').doc(studentId).update({
+          password: newPassword,
+          passwordResetAt: new Date().toISOString()
+        });
+        return true;
       } catch (error) {
-        console.error('관리자 확인 오류:', error);
-        return false;
+        throw error;
       }
     }
 
-    // 유틸리티 함수
-    function getThemeStatus(categoryId, themeId) {
-      const attempts = state.allStudentData[state.studentName]?.attempts || [];
-      const themeAttempts = attempts.filter(a => a.categoryId === categoryId && a.themeId === themeId);
-      
-      if (themeAttempts.length === 0) return { status: 'new', lastAttempt: null, attemptCount: 0 };
-      
-      const lastAttempt = themeAttempts[themeAttempts.length - 1];
-      const percentage = lastAttempt.percentage;
-      
-      return { 
-        status: percentage === 100 ? 'completed' : 'retry', 
-        lastAttempt, 
-        attemptCount: themeAttempts.length
-      };
-    }
+    async function loadStudentProgress(studentId) {
+      try {
+        const progressSnapshot = await db.collection('progress')
+          .where('studentId', '==', studentId)
+          .get();
 
-    function isLocked(categoryId, themeId) {
-      const lockUntil = state.lockTimers[`${state.studentName}-${categoryId}-${themeId}`];
-      if (!lockUntil) return false;
-      return state.currentTime < lockUntil;
-    }
-
-    function getRemainingTime(categoryId, themeId) {
-      const lockUntil = state.lockTimers[`${state.studentName}-${categoryId}-${themeId}`];
-      if (!lockUntil) return 0;
-      const remaining = Math.max(0, Math.ceil((lockUntil - state.currentTime) / 1000));
-      return remaining;
-    }
-
-    // 이벤트 핸들러
-    async function handleStudentLogin(autoLoginChecked = false, isNewStudent = false) {
-      if (state.studentName.trim() && state.phone.trim()) {
-        const p = state.phone.replace(/[^0-9]/g, '');
-        if (p.length < 10 || p.length > 11) {
-          alert('올바른 전화번호를 입력해주세요. (10-11자리)');
-          return;
-        }
-
-        if (isNewStudent && !state.teacherName.trim()) {
-          alert('담당 선생님 성함을 입력해주세요.');
-          return;
-        }
-
-        state.loading = true;
-        render();
-        const id = `${state.studentName.trim()}_${p}`;
-        state.uid = id;
-        
-        saveLoginInfo(state.studentName.trim(), p, state.teacherName.trim(), autoLoginChecked);
-        
-        await loadData(id);
-        
-        // 퇴원생 체크
-        const studentData = state.allStudentData[state.studentName];
-        if (studentData && studentData.status === 'withdrawn') {
-          state.loading = false;
-          alert('퇴원 처리된 학생은 로그인할 수 없습니다.\\n담당 선생님께 문의해주세요.');
-          logout();
-          return;
-        }
-        
-        // 신규 학생인 경우 선생님 정보 저장
-        if (isNewStudent) {
-          const newData = {
-            ...state.allStudentData[state.studentName],
-            teacherName: state.teacherName.trim(),
-            studentName: state.studentName.trim(),
-            phone: p,
-            status: 'active'
-          };
-          await saveData(newData);
-        }
-        
-        state.isLoggedIn = true;
-        state.userType = 'student';
-        state.loading = false;
-        render();
-      }
-    }
-
-    async function handleAdminLogin() {
-      if (!state.adminName.trim()) {
-        alert('관리자 이름을 입력해주세요.');
-        return;
-      }
-
-      const adminPassword = document.getElementById('adminPasswordInput')?.value;
-      if (!adminPassword) {
-        alert('비밀번호를 입력해주세요.');
-        return;
-      }
-
-      if (adminPassword !== ADMIN_PASSWORD) {
-        alert('비밀번호가 올바르지 않습니다.');
-        return;
-      }
-
-      // 자동 로그인 체크박스 확인 (render 전에 먼저 확인)
-      const autoLoginChecked = document.getElementById('adminAutoLoginCheckbox')?.checked || false;
-      console.log('관리자 자동 로그인 체크:', autoLoginChecked);
-
-      state.loading = true;
-      render();
-
-      const exists = await checkAdminExists(state.adminName.trim());
-      
-      if (!exists) {
-        state.loading = false;
-        alert('등록되지 않은 관리자입니다. 먼저 관리자 등록을 진행해주세요.');
-        render();
-        return;
-      }
-
-      // 자동 로그인 정보 저장
-      if (autoLoginChecked) {
-        console.log('관리자 자동 로그인 정보 저장:', state.adminName.trim());
-        localStorage.setItem('ox_quiz_admin_name', state.adminName.trim());
-        localStorage.setItem('ox_quiz_admin_auto_login', 'true');
-      }
-
-      await loadAdminStudents(state.adminName.trim());
-      
-      state.isLoggedIn = true;
-      state.userType = 'admin';
-      state.loading = false;
-      render();
-    }
-
-    function handleStartQuiz(themeId) {
-      if (isLocked(state.selectedCategory, themeId)) return;
-
-      state.currentTheme = themeId;
-      state.currentQuestion = 0;
-      state.answers = {};
-      state.isWrongAnswerTest = false;
-      state.wrongAnswerTestQuestions = [];
-      startQuestionTimer();
-      render();
-    }
-
-    function handleStartWrongAnswerTest(themeId) {
-      const category = categories.find(c => c.id === state.selectedCategory);
-      const theme = category.chapters.find(t => t.id === themeId);
-
-      // 마지막 시도의 오답 인덱스 가져오기
-      const status = getThemeStatus(state.selectedCategory, themeId);
-      const wrongIndices = status.lastAttempt?.wrongQuestionIndices || [];
-
-      // 각 오답에 대해 유사 문제를 랜덤으로 선택
-      const selectedQuestions = wrongIndices
-        .filter(idx => {
-          const q = theme.questions[idx];
-          return q && q.similarQuestions && q.similarQuestions.length > 0;
-        })
-        .map(idx => {
-          const q = theme.questions[idx];
-          const randomIdx = Math.floor(Math.random() * q.similarQuestions.length);
-          const similarQ = q.similarQuestions[randomIdx];
-          return {
-            ...similarQ,
-            originalQuestionIndex: idx,
-            originalQuestion: q.question
+        const progress = {};
+        progressSnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          const key = `${data.categoryId}_${data.chapterId}`;
+          progress[key] = {
+            id: doc.id,
+            ...data
           };
         });
 
-      if (selectedQuestions.length === 0) {
-        alert('오답 문제 중 유사 문제가 없습니다.');
-        return;
-      }
-
-      // 오답 테스트 모드로 설정
-      state.isWrongAnswerTest = true;
-      state.wrongAnswerTestQuestions = selectedQuestions;
-      state.currentTheme = themeId;
-      state.currentQuestion = 0;
-      state.answers = {};
-      startQuestionTimer();
-      render();
-    }
-
-    // 타이머 함수들
-    function startQuestionTimer() {
-      // 기존 타이머가 있으면 정리
-      if (state.timerInterval) {
-        clearInterval(state.timerInterval);
-      }
-
-      // 타이머 초기화 (3분 = 180초)
-      state.questionTimer = 180;
-      state.timerExpired = false;
-
-      // 1초마다 업데이트
-      state.timerInterval = setInterval(() => {
-        if (state.questionTimer > 0) {
-          state.questionTimer--;
-          updateTimerDisplay();
-        } else {
-          state.timerExpired = true;
-          clearInterval(state.timerInterval);
-          updateTimerDisplay();
-        }
-      }, 1000);
-    }
-
-    function updateTimerDisplay() {
-      const timerElement = document.getElementById('questionTimer');
-      if (timerElement) {
-        const minutes = Math.floor(state.questionTimer / 60);
-        const seconds = state.questionTimer % 60;
-        const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-
-        if (state.timerExpired) {
-          timerElement.innerHTML = `<span class="text-red-400 font-bold">⏰ 시간 종료</span>`;
-        } else if (state.questionTimer <= 30) {
-          timerElement.innerHTML = `<span class="text-red-400 font-bold">⏱ ${timeString}</span>`;
-        } else {
-          timerElement.innerHTML = `<span class="text-gray-300">⏱ ${timeString}</span>`;
-        }
+        return progress;
+      } catch (error) {
+        console.error('진도 로드 오류:', error);
+        return {};
       }
     }
 
-    function stopQuestionTimer() {
-      if (state.timerInterval) {
-        clearInterval(state.timerInterval);
-        state.timerInterval = null;
+    async function saveProgress(studentId, studentName, categoryId, chapterId, categoryName, chapterName, completedQuestions, totalQuestions) {
+      try {
+        const progressId = `${studentId}_${categoryId}_${chapterId}`;
+        const progressData = {
+          studentId: studentId,
+          studentName: studentName,
+          categoryId: categoryId,
+          chapterId: chapterId,
+          categoryName: categoryName,
+          chapterName: chapterName,
+          totalQuestions: totalQuestions,
+          completedQuestions: completedQuestions,
+          lastTestedIndex: Math.max(...completedQuestions),
+          fullyTested: completedQuestions.length === totalQuestions,
+          updatedAt: new Date().toISOString()
+        };
+
+        await db.collection('progress').doc(progressId).set(progressData, { merge: true });
+        return true;
+      } catch (error) {
+        console.error('진도 저장 오류:', error);
+        throw error;
       }
     }
 
-    function handleAnswer(selectedAnswer) {
-      const key = state.currentQuestion;
-      if (state.answers[key]) return;
+    // 렌더링 함수들
+    function renderLoginScreen() {
+      return `
+        <div class="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center p-4">
+          <div class="w-full max-w-md">
+            <div class="bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-700">
+              <h1 class="text-3xl font-bold text-white mb-8 text-center">구두테스트 퀴즈</h1>
 
-      const category = categories.find(c => c.id === state.selectedCategory);
-      const theme = category.chapters.find(t => t.id === state.currentTheme);
-      const question = theme.questions[state.currentQuestion];
-
-      // 서술형 문제 (answer가 빈 문자열)의 경우 O를 선택하면 맞은 것으로 처리
-      const isCorrect = question.answer === ""
-        ? selectedAnswer === "O"
-        : selectedAnswer === question.answer;
-
-      const status = getThemeStatus(state.selectedCategory, state.currentTheme);
-      const isRetake = status.attemptCount >= 1;
-
-      state.answers[key] = { selected: selectedAnswer, correct: isCorrect, isRetake };
-      render();
-    }
-
-    function handleNext() {
-      const category = categories.find(c => c.id === state.selectedCategory);
-      const theme = category.chapters.find(t => t.id === state.currentTheme);
-      if (state.currentQuestion < theme.questions.length - 1) {
-        state.currentQuestion++;
-        startQuestionTimer();
-        render();
-      }
-    }
-
-    function handlePrev() {
-      if (state.currentQuestion > 0) {
-        state.currentQuestion--;
-        startQuestionTimer();
-        render();
-      }
-    }
-
-    async function handleFinishQuiz() {
-      stopQuestionTimer();
-      const category = categories.find(c => c.id === state.selectedCategory);
-      const theme = category.chapters.find(t => t.id === state.currentTheme);
-      const correct = Object.values(state.answers).filter(a => a.correct).length;
-      const total = theme.questions.length;
-      const percentage = Math.round((correct / total) * 100);
-      
-      const wrongQuestionsData = theme.questions
-        .map((q, idx) => ({ ...q, index: idx }))
-        .filter(q => state.answers[q.index] && !state.answers[q.index].correct);
-
-      const wrongQuestions = wrongQuestionsData.map(q => q.question);
-      const wrongQuestionIndices = wrongQuestionsData.map(q => q.index);
-
-      const attemptData = {
-        categoryId: state.selectedCategory,
-        categoryName: category.name,
-        themeId: state.currentTheme,
-        themeName: theme.name,
-        date: new Date().toLocaleString('ko-KR'),
-        correct,
-        total,
-        percentage,
-        wrongQuestions,
-        wrongQuestionIndices,
-        answers: { ...state.answers }
-      };
-
-      const newData = {
-        ...state.allStudentData[state.studentName],
-        attempts: [...(state.allStudentData[state.studentName]?.attempts || []), attemptData],
-        teacherName: state.teacherName, // teacherName 항상 포함
-        studentName: state.studentName,
-        phone: state.phone
-      };
-
-      if (percentage < 100) {
-        const lockUntil = Date.now() + 60000;
-        state.lockTimers[`${state.studentName}-${state.selectedCategory}-${state.currentTheme}`] = lockUntil;
-        newData.lockTimers = state.lockTimers;
-      }
-
-      state.allStudentData[state.studentName] = newData;
-      await saveData(newData);
-
-      state.currentTheme = null;
-      state.currentQuestion = 0;
-      state.answers = {};
-      render();
-    }
-
-    // 렌더링 함수
-    let isRendering = false;
-    function render() {
-      if (isRendering) return;
-      isRendering = true;
-      
-      const app = document.getElementById('app');
-
-      if (state.loading) {
-        app.innerHTML = `
-          <div class="min-h-screen flex items-center justify-center">
-            <div class="text-center">
-              <div class="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p class="text-white font-bold">데이터 불러오는 중...</p>
-            </div>
-          </div>
-        `;
-        isRendering = false;
-        return;
-      }
-
-      if (!state.isLoggedIn) {
-        if (state.showAdminRegister) {
-          renderAdminRegister(app);
-        } else {
-          renderLogin(app);
-        }
-        // 로그인 화면은 수식이 없으므로 즉시 표시
-        if (!app.classList.contains('ready')) {
-          app.classList.add('ready');
-        }
-        isRendering = false;
-        return;
-      }
-
-      if (state.userType === 'admin') {
-        renderAdminScreen(app);
-      } else {
-        renderMainScreen();
-      }
-      
-      isRendering = false;
-      
-      // DOM 업데이트 후 KaTeX 렌더링 (디바운싱 적용됨)
-      renderMath();
-    }
-
-    // KaTeX 렌더링 함수 (강력한 디바운싱)
-    let renderMathTimeout = null;
-    let isRenderingMath = false;
-    let lastRenderTime = 0;
-    let isFirstRender = true;
-    
-    function renderMath() {
-      // KaTeX auto-render 실행
-      if (typeof renderMathInElement !== 'undefined') {
-        const app = document.getElementById('app');
-        if (app) {
-          try {
-            renderMathInElement(app, {
-              delimiters: [
-                {left: '\\(', right: '\\)', display: false},
-                {left: '\\[', right: '\\]', display: true}
-              ],
-              throwOnError: false
-            });
-            console.log('✓ KaTeX 렌더링 완료');
-          } catch (error) {
-            console.error('KaTeX 렌더링 오류:', error);
-          }
-        }
-      }
-
-      // 첫 렌더링 시 앱 즉시 표시
-      if (isFirstRender) {
-        const app = document.getElementById('app');
-        if (app && !app.classList.contains('ready')) {
-          app.classList.add('ready');
-          console.log('✓ 앱 표시');
-        }
-        isFirstRender = false;
-      }
-    }
-
-    function renderLogin(app) {
-      app.innerHTML = `
-        <div class="min-h-screen flex items-center justify-center p-6">
-          <div class="max-w-md w-full">
-            <div class="bg-gray-900 rounded-2xl p-8 shadow-2xl border border-orange-500/30">
-              <div class="flex justify-center mb-6">
-                <div class="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center shadow-lg shadow-orange-500/50">
-                  ${icon('bookOpen', 'text-white', 32)}
-                </div>
-              </div>
-              <h1 class="text-3xl font-bold text-center mb-2 text-white">구두테스트 퀴즈</h1>
-              <h2 class="text-xl text-center mb-8 text-orange-500">대수</h2>
-              
-              <div class="flex gap-2 mb-6">
-                <button id="studentBtn" class="flex-1 py-2 px-4 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg font-bold text-white text-sm">
-                  학생
+              <div class="space-y-4">
+                <button
+                  onclick="showTeacherLogin()"
+                  class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 flex items-center justify-center gap-3"
+                >
+                  ${icon('user', '', 28)}
+                  <span class="text-lg">선생님 로그인</span>
                 </button>
-                <button id="adminBtn" class="flex-1 py-2 px-4 bg-gray-800 hover:bg-gray-700 rounded-lg font-bold text-white text-sm transition-all">
-                  관리자
+
+                <button
+                  onclick="showStudentLogin()"
+                  class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 flex items-center justify-center gap-3"
+                >
+                  ${icon('user', '', 28)}
+                  <span class="text-lg">학생 로그인</span>
                 </button>
               </div>
 
-              <div id="loginForm"></div>
+              <div class="mt-6 text-center">
+                <button onclick="showRegisterScreen('teacher')" class="text-orange-400 hover:text-orange-300 text-sm">
+                  선생님 회원가입
+                </button>
+              </div>
             </div>
           </div>
         </div>
       `;
-
-      const studentBtn = document.getElementById('studentBtn');
-      const adminBtn = document.getElementById('adminBtn');
-      const loginForm = document.getElementById('loginForm');
-
-      function showStudentForm() {
-        studentBtn.className = "flex-1 py-2 px-4 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg font-bold text-white text-sm";
-        adminBtn.className = "flex-1 py-2 px-4 bg-gray-800 hover:bg-gray-700 rounded-lg font-bold text-white text-sm transition-all";
-        
-        loginForm.innerHTML = `
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-semibold mb-2 text-gray-300">학생 이름</label>
-              <input
-                type="text"
-                id="nameInput"
-                value="${state.studentName}"
-                placeholder="이름을 입력하세요"
-                class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 text-white placeholder-gray-500 transition-all"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-semibold mb-2 text-gray-300">전화번호</label>
-              <input
-                type="tel"
-                id="phoneInput"
-                value="${state.phone}"
-                placeholder="전화번호 (- 없이)"
-                class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 text-white placeholder-gray-500 transition-all"
-              />
-              <p class="text-xs text-gray-500 mt-1">예: 01012345678</p>
-            </div>
-
-            <div id="teacherField" style="display: none;">
-              <label class="block text-sm font-semibold mb-2 text-gray-300">담당 선생님 성함</label>
-              <input
-                type="text"
-                id="teacherInput"
-                value="${state.teacherName}"
-                placeholder="선생님 성함"
-                class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 text-white placeholder-gray-500 transition-all"
-              />
-              <p class="text-xs text-gray-500 mt-1">처음 가입시에만 입력</p>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="newStudentCheck"
-                class="w-4 h-4 bg-gray-800 border-gray-700 rounded focus:ring-orange-500 focus:ring-2 text-orange-500"
-              />
-              <label for="newStudentCheck" class="text-sm text-gray-300 cursor-pointer">처음 가입하는 학생입니다</label>
-            </div>
-
-            <div>
-              <label class="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  id="autoLoginCheck"
-                  ${state.autoLogin ? 'checked' : ''}
-                  class="w-4 h-4 bg-gray-800 border-gray-700 rounded focus:ring-orange-500 focus:ring-2 text-orange-500"
-                />
-                <span class="ml-2 text-sm text-gray-300">자동 로그인</span>
-              </label>
-              <p class="text-xs text-gray-500 mt-1 ml-6">다음부터 자동으로 로그인됩니다</p>
-            </div>
-            
-            <button
-              id="loginBtn"
-              class="w-full py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-xl font-bold text-white transition-all shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transform hover:scale-105 active:scale-95"
-            >
-              시작하기
-            </button>
-          </div>
-        `;
-
-        const nameInput = document.getElementById('nameInput');
-        const phoneInput = document.getElementById('phoneInput');
-        const teacherInput = document.getElementById('teacherInput');
-        const newStudentCheck = document.getElementById('newStudentCheck');
-        const teacherField = document.getElementById('teacherField');
-        const loginBtn = document.getElementById('loginBtn');
-
-        nameInput.addEventListener('input', (e) => {
-          state.studentName = e.target.value;
-        });
-        
-        phoneInput.addEventListener('input', (e) => {
-          state.phone = e.target.value;
-        });
-
-        teacherInput.addEventListener('input', (e) => {
-          state.teacherName = e.target.value;
-        });
-
-        newStudentCheck.addEventListener('change', (e) => {
-          teacherField.style.display = e.target.checked ? 'block' : 'none';
-        });
-
-        phoneInput.addEventListener('keypress', (e) => {
-          if (e.key === 'Enter') {
-            const autoLoginChecked = document.getElementById('autoLoginCheck').checked;
-            const isNewStudent = newStudentCheck.checked;
-            handleStudentLogin(autoLoginChecked, isNewStudent);
-          }
-        });
-
-        loginBtn.addEventListener('click', () => {
-          const autoLoginChecked = document.getElementById('autoLoginCheck').checked;
-          const isNewStudent = newStudentCheck.checked;
-          handleStudentLogin(autoLoginChecked, isNewStudent);
-        });
-      }
-
-      function showAdminForm() {
-        studentBtn.className = "flex-1 py-2 px-4 bg-gray-800 hover:bg-gray-700 rounded-lg font-bold text-white text-sm transition-all";
-        adminBtn.className = "flex-1 py-2 px-4 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg font-bold text-white text-sm";
-        
-        loginForm.innerHTML = `
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-semibold mb-2 text-gray-300">관리자 이름</label>
-              <input
-                type="text"
-                id="adminNameInput"
-                value="${state.adminName}"
-                placeholder="이름을 입력하세요"
-                class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 text-white placeholder-gray-500 transition-all"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-semibold mb-2 text-gray-300">비밀번호</label>
-              <input
-                type="password"
-                id="adminPasswordInput"
-                placeholder="비밀번호를 입력하세요"
-                class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 text-white placeholder-gray-500 transition-all"
-              />
-            </div>
-
-            <div class="flex items-center">
-              <input
-                type="checkbox"
-                id="adminAutoLoginCheckbox"
-                class="w-4 h-4 bg-gray-800 border-gray-700 rounded focus:ring-orange-500 focus:ring-2"
-              />
-              <label for="adminAutoLoginCheckbox" class="ml-2 text-sm text-gray-300">
-                자동 로그인
-              </label>
-            </div>
-            
-            <button
-              id="adminLoginBtn"
-              class="w-full py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-xl font-bold text-white transition-all shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transform hover:scale-105 active:scale-95"
-            >
-              로그인
-            </button>
-
-            <button
-              id="adminRegisterBtn"
-              class="w-full py-3 bg-gray-800 hover:bg-gray-700 rounded-xl font-bold text-white transition-all border border-gray-700"
-            >
-              관리자 등록
-            </button>
-          </div>
-        `;
-
-        const adminNameInput = document.getElementById('adminNameInput');
-        const adminPasswordInput = document.getElementById('adminPasswordInput');
-        const adminLoginBtn = document.getElementById('adminLoginBtn');
-        const adminRegisterBtn = document.getElementById('adminRegisterBtn');
-
-        adminNameInput.addEventListener('input', (e) => {
-          state.adminName = e.target.value;
-        });
-
-        adminPasswordInput.addEventListener('keypress', (e) => {
-          if (e.key === 'Enter') {
-            handleAdminLogin();
-          }
-        });
-
-        adminLoginBtn.addEventListener('click', handleAdminLogin);
-        
-        adminRegisterBtn.addEventListener('click', () => {
-          state.showAdminRegister = true;
-          render();
-        });
-      }
-
-      studentBtn.addEventListener('click', showStudentForm);
-      adminBtn.addEventListener('click', showAdminForm);
-
-      showStudentForm();
     }
 
-    function renderAdminRegister(app) {
-      app.innerHTML = `
-        <div class="min-h-screen flex items-center justify-center p-6">
-          <div class="max-w-md w-full">
-            <div class="bg-gray-900 rounded-2xl p-8 shadow-2xl border border-orange-500/30">
-              <div class="mb-6">
-                <button id="backBtn" class="text-sm text-orange-500 hover:text-orange-400 flex items-center font-semibold">
-                  ${icon('chevronLeft', '', 16)}돌아가기
+    function renderTeacherLoginForm() {
+      return `
+        <div class="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center p-4">
+          <div class="w-full max-w-md">
+            <div class="bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-700">
+              <div class="flex items-center justify-between mb-6">
+                <button onclick="backToLogin()" class="text-gray-400 hover:text-white">
+                  ${icon('chevronLeft')}
                 </button>
+                <h2 class="text-2xl font-bold text-white">선생님 로그인</h2>
+                <div class="w-6"></div>
               </div>
 
-              <div class="flex justify-center mb-6">
-                <div class="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center shadow-lg shadow-orange-500/50">
-                  ${icon('settings', 'text-white', 32)}
-                </div>
-              </div>
-              
-              <h1 class="text-2xl font-bold text-center mb-2 text-white">관리자 등록</h1>
-              <p class="text-sm text-center mb-6 text-gray-400">보안 키가 필요합니다</p>
-              
-              <div class="space-y-4">
+              <form onsubmit="handleTeacherLogin(event)" class="space-y-4">
                 <div>
-                  <label class="block text-sm font-semibold mb-2 text-gray-300">관리자 이름</label>
+                  <label class="block text-gray-300 mb-2">이름</label>
                   <input
                     type="text"
-                    id="regAdminNameInput"
+                    id="teacherName"
+                    required
+                    class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500"
                     placeholder="이름을 입력하세요"
-                    class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 text-white placeholder-gray-500 transition-all"
                   />
                 </div>
 
                 <div>
-                  <label class="block text-sm font-semibold mb-2 text-gray-300">보안 키</label>
+                  <label class="block text-gray-300 mb-2">비밀번호</label>
                   <input
                     type="password"
-                    id="secretKeyInput"
-                    placeholder="보안 키를 입력하세요"
-                    class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 text-white placeholder-gray-500 transition-all"
+                    id="teacherKey"
+                    required
+                    class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500"
+                    placeholder="비밀번호를 입력하세요"
                   />
-                  <p class="text-xs text-red-400 mt-1">⚠️ 관리자만 알고 있는 보안 키</p>
                 </div>
-                
+
                 <button
-                  id="registerBtn"
-                  class="w-full py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-xl font-bold text-white transition-all shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transform hover:scale-105 active:scale-95"
+                  type="submit"
+                  class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-xl transition-all"
                 >
-                  등록하기
+                  로그인
+                </button>
+              </form>
+
+              <div class="mt-4 text-center">
+                <button onclick="showRegisterScreen('teacher')" class="text-orange-400 hover:text-orange-300 text-sm">
+                  계정이 없으신가요? 회원가입
                 </button>
               </div>
             </div>
           </div>
         </div>
       `;
-
-      document.getElementById('backBtn').addEventListener('click', () => {
-        state.showAdminRegister = false;
-        render();
-      });
-
-      const regAdminNameInput = document.getElementById('regAdminNameInput');
-      const secretKeyInput = document.getElementById('secretKeyInput');
-      const registerBtn = document.getElementById('registerBtn');
-
-      registerBtn.addEventListener('click', async () => {
-        const name = regAdminNameInput.value.trim();
-        const key = secretKeyInput.value.trim();
-
-        if (!name) {
-          alert('이름을 입력해주세요.');
-          return;
-        }
-
-        if (!key) {
-          alert('보안 키를 입력해주세요.');
-          return;
-        }
-
-        const success = await registerAdmin(name, key);
-        if (success) {
-          state.showAdminRegister = false;
-          render();
-        }
-      });
     }
 
-    function renderAdminScreen(app) {
-      if (state.selectedStudent) {
-        renderAdminStudentDetail(app);
-        return;
-      }
+    function renderStudentLoginForm() {
+      return `
+        <div class="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center p-4">
+          <div class="w-full max-w-md">
+            <div class="bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-700">
+              <div class="flex items-center justify-between mb-6">
+                <button onclick="backToLogin()" class="text-gray-400 hover:text-white">
+                  ${icon('chevronLeft')}
+                </button>
+                <h2 class="text-2xl font-bold text-white">학생 로그인</h2>
+                <div class="w-6"></div>
+              </div>
 
-      // 재원생/퇴원생 필터링
-      const activeStudents = state.adminStudents.filter(s => s.status !== 'withdrawn');
-      const withdrawnStudents = state.adminStudents.filter(s => s.status === 'withdrawn');
-      const displayStudents = (state.studentStatusFilter === 'withdrawn') ? withdrawnStudents : activeStudents;
-      
-      app.innerHTML = `
-        <div class="min-h-screen p-6">
-          <div class="max-w-5xl mx-auto">
-            <div class="bg-gray-900 rounded-2xl p-6 mb-8 shadow-xl border border-orange-500/30">
+              <form onsubmit="handleStudentLogin(event)" class="space-y-4">
+                <div>
+                  <label class="block text-gray-300 mb-2">이름</label>
+                  <input
+                    type="text"
+                    id="studentName"
+                    required
+                    class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500"
+                    placeholder="이름을 입력하세요"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-gray-300 mb-2">비밀번호</label>
+                  <input
+                    type="password"
+                    id="studentPassword"
+                    required
+                    class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500"
+                    placeholder="비밀번호를 입력하세요"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-xl transition-all"
+                >
+                  로그인
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderRegisterScreen(type) {
+      const isTeacher = type === 'teacher';
+      const color = isTeacher ? 'orange' : 'blue';
+      const title = isTeacher ? '선생님 회원가입' : '학생 회원가입';
+
+      return `
+        <div class="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center p-4">
+          <div class="w-full max-w-md">
+            <div class="bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-700">
+              <div class="flex items-center justify-between mb-6">
+                <button onclick="backToLogin()" class="text-gray-400 hover:text-white">
+                  ${icon('chevronLeft')}
+                </button>
+                <h2 class="text-2xl font-bold text-white">${title}</h2>
+                <div class="w-6"></div>
+              </div>
+
+              <form onsubmit="handleRegister(event, '${type}')" class="space-y-4">
+                <div>
+                  <label class="block text-gray-300 mb-2">이름</label>
+                  <input
+                    type="text"
+                    id="registerName"
+                    required
+                    class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-${color}-500"
+                    placeholder="이름을 입력하세요"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-gray-300 mb-2">비밀번호</label>
+                  <input
+                    type="password"
+                    id="registerPassword"
+                    required
+                    class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-${color}-500"
+                    placeholder="비밀번호를 입력하세요"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-gray-300 mb-2">비밀번호 확인</label>
+                  <input
+                    type="password"
+                    id="registerPasswordConfirm"
+                    required
+                    class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-${color}-500"
+                    placeholder="비밀번호를 다시 입력하세요"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  class="w-full bg-${color}-500 hover:bg-${color}-600 text-white font-bold py-3 px-6 rounded-xl transition-all"
+                >
+                  가입하기
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderTeacherHome() {
+      return `
+        <div class="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-4">
+          <div class="max-w-4xl mx-auto">
+            <!-- 헤더 -->
+            <div class="bg-gray-800 rounded-2xl p-6 mb-6 border border-gray-700">
               <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                  <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mr-3">
-                    ${icon('users', 'text-white')}
-                  </div>
+                <div class="flex items-center gap-3">
+                  ${icon('user', 'text-orange-500', 32)}
                   <div>
-                    <h2 class="text-xl font-bold text-white">${state.adminName} 선생님</h2>
-                    <p class="text-sm text-gray-400 mt-1">담당 학생 관리</p>
+                    <h1 class="text-2xl font-bold text-white">${state.userName} 선생님</h1>
+                    <p class="text-gray-400 text-sm">학생을 선택하여 테스트를 시작하세요</p>
                   </div>
                 </div>
-                <button id="logoutBtn" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-bold text-white transition-all transform hover:scale-105 active:scale-95 text-sm">
-                  로그아웃
+                <button onclick="logout()" class="text-gray-400 hover:text-white transition-colors">
+                  ${icon('logout')}
                 </button>
               </div>
             </div>
 
-            <!-- 재원생/퇴원생 탭 -->
-            <div class="mb-6">
-              <div class="flex gap-2 mb-4">
-                <button id="activeTab" class="px-6 py-3 rounded-lg font-bold transition-all ${state.studentStatusFilter !== 'withdrawn' ? 'bg-orange-500 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}">
-                  재원생 (${activeStudents.length}명)
-                </button>
-                <button id="withdrawnTab" class="px-6 py-3 rounded-lg font-bold transition-all ${state.studentStatusFilter === 'withdrawn' ? 'bg-gray-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}">
-                  퇴원생 (${withdrawnStudents.length}명)
-                </button>
-              </div>
-              
-              <div class="bg-gray-900 rounded-xl p-4 border border-gray-800">
-                <div class="flex items-center justify-between">
-                  <span class="text-gray-400 text-sm font-semibold">
-                    ${state.studentStatusFilter === 'withdrawn' ? '퇴원생' : '재원생'} 수
-                  </span>
-                  <span class="text-2xl font-bold text-orange-400">${displayStudents.length}명</span>
-                </div>
-              </div>
-            </div>
-
-            ${displayStudents.length === 0 ? `
-              <div class="bg-gray-900 rounded-2xl p-12 text-center border border-gray-800">
-                ${icon('users', 'mx-auto mb-4 text-gray-600', 48)}
-                <p class="text-gray-400 font-medium">
-                  ${state.studentStatusFilter === 'withdrawn' ? '퇴원 처리된 학생이 없습니다.' : '아직 담당 학생이 없습니다.'}
-                </p>
-                ${state.studentStatusFilter !== 'withdrawn' ? `
-                  <p class="text-sm text-gray-500 mt-2">학생이 회원가입할 때 선생님 성함을 입력하면 자동으로 연결됩니다.</p>
-                ` : ''}
-              </div>
-            ` : `
-              <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                ${displayStudents.map(student => {
-                  const attempts = student.attempts || [];
-                  const totalAttempts = attempts.length;
-                  const avgPercentage = totalAttempts > 0 
-                    ? Math.round(attempts.reduce((sum, a) => sum + a.percentage, 0) / totalAttempts)
-                    : 0;
-                  const completedThemes = attempts.filter(a => a.percentage === 100).length;
-
-                  return `
-                    <button
-                      data-student="${student.id}"
-                      class="student-btn bg-gray-900 rounded-2xl p-6 border border-gray-800 shadow-xl hover:shadow-orange-500/20 hover:border-orange-500/50 transition-all text-left transform hover:scale-105 active:scale-95"
-                    >
-                      <div class="flex items-center mb-4">
-                        <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mr-3">
-                          ${icon('user', 'text-white', 20)}
-                        </div>
-                        <div>
-                          <h3 class="text-base font-bold text-white">${student.studentName || '이름 없음'}</h3>
-                          <p class="text-xs text-gray-500">${student.phone || ''}</p>
-                        </div>
-                      </div>
-                      
-                      <div class="grid grid-cols-3 gap-2 mb-3">
-                        <div class="bg-gray-800/50 rounded-lg p-2 text-center">
-                          <div class="text-lg font-bold text-orange-400">${totalAttempts}</div>
-                          <div class="text-xs text-gray-500">시도</div>
-                        </div>
-                        <div class="bg-gray-800/50 rounded-lg p-2 text-center">
-                          <div class="text-lg font-bold text-green-400">${completedThemes}</div>
-                          <div class="text-xs text-gray-500">완료</div>
-                        </div>
-                        <div class="bg-gray-800/50 rounded-lg p-2 text-center">
-                          <div class="text-lg font-bold text-blue-400">${avgPercentage}%</div>
-                          <div class="text-xs text-gray-500">평균</div>
-                        </div>
-                      </div>
-
-                      <div class="text-xs text-gray-400 text-right">
-                        자세히 보기 →
-                      </div>
-                    </button>
-                  `;
-                }).join('')}
-              </div>
-            `}
-          </div>
-        </div>
-      `;
-
-      document.getElementById('logoutBtn').addEventListener('click', () => {
-        if (confirm('로그아웃 하시겠습니까?')) {
-          logout();
-        }
-      });
-
-      // 탭 전환 이벤트
-      document.getElementById('activeTab').addEventListener('click', () => {
-        state.studentStatusFilter = 'active';
-        render();
-      });
-
-      document.getElementById('withdrawnTab').addEventListener('click', () => {
-        state.studentStatusFilter = 'withdrawn';
-        render();
-      });
-
-      document.querySelectorAll('.student-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const studentId = btn.dataset.student;
-          state.selectedStudent = state.adminStudents.find(s => s.id === studentId);
-          render();
-        });
-      });
-    }
-
-    function renderAdminStudentDetail(app) {
-      const student = state.selectedStudent;
-      const attempts = student.attempts || [];
-
-      app.innerHTML = `
-        <div class="min-h-screen p-6">
-          <div class="max-w-5xl mx-auto">
-            <div class="mb-4">
-              <button id="backBtn" class="text-sm text-orange-500 hover:text-orange-400 flex items-center font-semibold">
-                ${icon('chevronLeft', '', 16)}학생 목록으로 돌아가기
-              </button>
-            </div>
-
-            <div class="bg-gray-900 rounded-2xl p-6 mb-6 shadow-xl border border-orange-500/30">
-              <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center">
-                  <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mr-3">
-                    ${icon('user', 'text-white')}
-                  </div>
-                  <div>
-                    <h2 class="text-xl font-bold text-white">${student.studentName || '이름 없음'}</h2>
-                    <p class="text-sm text-gray-400 mt-1">${student.phone || ''}</p>
-                  </div>
-                </div>
-                ${student.status === 'withdrawn' ? `
-                  <button id="reactivateBtn" class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg font-bold text-white transition-all transform hover:scale-105 active:scale-95 text-sm flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    재원 처리
-                  </button>
-                ` : `
-                  <button id="withdrawBtn" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg font-bold text-white transition-all transform hover:scale-105 active:scale-95 text-sm flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6"/>
-                    </svg>
-                    퇴원 처리
-                  </button>
-                `}
-              </div>
-              ${student.status === 'withdrawn' ? `
-                <div class="bg-yellow-900/30 border border-yellow-600/50 rounded-lg p-3 mt-4">
-                  <p class="text-yellow-400 text-sm font-bold flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                    </svg>
-                    퇴원 처리된 학생입니다
-                  </p>
-                </div>
-              ` : ''}
-            </div>
-
-            <div class="grid md:grid-cols-4 gap-4 mb-6">
-              <div class="bg-gray-900 rounded-xl p-4 border border-gray-800">
-                <div class="text-center">
-                  <div class="text-2xl font-bold text-orange-400">${attempts.length}</div>
-                  <div class="text-xs text-gray-500 mt-1">전체 시도</div>
-                </div>
-              </div>
-              <div class="bg-gray-900 rounded-xl p-4 border border-gray-800">
-                <div class="text-center">
-                  <div class="text-2xl font-bold text-green-400">${attempts.filter(a => a.percentage === 100).length}</div>
-                  <div class="text-xs text-gray-500 mt-1">완료 테마</div>
-                </div>
-              </div>
-              <div class="bg-gray-900 rounded-xl p-4 border border-gray-800">
-                <div class="text-center">
-                  <div class="text-2xl font-bold text-blue-400">
-                    ${attempts.length > 0 ? Math.round(attempts.reduce((sum, a) => sum + a.percentage, 0) / attempts.length) : 0}%
-                  </div>
-                  <div class="text-xs text-gray-500 mt-1">평균 정답률</div>
-                </div>
-              </div>
-              <div class="bg-gray-900 rounded-xl p-4 border border-gray-800">
-                <div class="text-center">
-                  <div class="text-2xl font-bold text-purple-400">
-                    ${attempts.length > 0 ? Math.round(attempts.reduce((sum, a) => sum + a.correct, 0) / attempts.length) : 0}
-                  </div>
-                  <div class="text-xs text-gray-500 mt-1">평균 정답 수</div>
-                </div>
-              </div>
-            </div>
-
-            ${attempts.length === 0 ? `
-              <div class="bg-gray-900 rounded-2xl p-12 text-center border border-gray-800">
-                ${icon('barChart', 'mx-auto mb-4 text-gray-600', 48)}
-                <p class="text-gray-400 font-medium">아직 학습 기록이 없습니다.</p>
-              </div>
-            ` : `
-              <div class="space-y-4">
-                ${(() => {
-                  const themeGroups = {};
-                  attempts.forEach(attempt => {
-                    const key = `${attempt.categoryName}-${attempt.themeName}`;
-                    if (!themeGroups[key]) {
-                      themeGroups[key] = [];
-                    }
-                    themeGroups[key].push(attempt);
-                  });
-
-                  return Object.entries(themeGroups).map(([key, themeAttempts]) => {
-                    const lastAttempt = themeAttempts[themeAttempts.length - 1];
-                    const allWrongQuestions = themeAttempts
-                      .flatMap(a => a.wrongQuestions || [])
-                      .filter((q, idx, arr) => arr.indexOf(q) === idx);
-
-                    return `
-                      <div class="bg-gray-900 rounded-2xl p-6 border border-gray-800 shadow-xl">
-                        <div class="flex justify-between items-start mb-4">
-                          <div>
-                            <h3 class="text-sm font-bold text-gray-400 mb-1">${lastAttempt.categoryName}</h3>
-                            <h4 class="text-base font-bold text-white">${lastAttempt.themeName}</h4>
-                            <p class="text-xs text-gray-500 mt-1">최근 시도: ${lastAttempt.date}</p>
-                          </div>
-                          <div class="text-right">
-                            <div class="text-2xl font-bold ${lastAttempt.percentage === 100 ? 'text-green-400' : 'text-orange-400'}">
-                              ${lastAttempt.percentage}%
-                            </div>
-                            <div class="text-xs text-gray-500 font-semibold">${lastAttempt.correct} / ${lastAttempt.total}</div>
-                          </div>
-                        </div>
-                        
-                        <div class="grid grid-cols-3 gap-4 pt-4 border-t border-gray-800 mb-4">
-                          <div class="text-center">
-                            <div class="text-lg font-bold text-green-400">${lastAttempt.correct}</div>
-                            <div class="text-xs text-gray-500">맞힌 개수</div>
-                          </div>
-                          <div class="text-center">
-                            <div class="text-lg font-bold text-red-400">${lastAttempt.total - lastAttempt.correct}</div>
-                            <div class="text-xs text-gray-500">틀린 개수</div>
-                          </div>
-                          <div class="text-center">
-                            <div class="text-lg font-bold text-blue-400">${themeAttempts.length}</div>
-                            <div class="text-xs text-gray-500">시도 횟수</div>
-                          </div>
-                        </div>
-
-                        ${allWrongQuestions.length > 0 ? `
-                          <div class="bg-red-900/20 border border-red-500/30 rounded-xl p-4">
-                            <h4 class="text-sm font-bold text-red-400 mb-3 flex items-center">
-                              ${icon('xCircle', 'mr-2', 18)}틀린 문제 목록
-                            </h4>
-                            <div class="space-y-2">
-                              ${allWrongQuestions.map((wrongQ, idx) => `
-                                <div class="text-sm bg-gray-900/50 rounded-lg p-3 border border-red-500/20">
-                                  <p class="text-red-300 font-medium leading-relaxed">${idx + 1}. ${wrongQ}</p>
-                                </div>
-                              `).join('')}
-                            </div>
-                          </div>
-                        ` : `
-                          <div class="bg-green-900/20 border border-green-500/30 rounded-xl p-4 text-center">
-                            <p class="text-green-400 text-sm font-bold">
-                              ${icon('checkCircle', 'inline mr-2', 18)}모든 문제를 맞혔습니다!
-                            </p>
-                          </div>
-                        `}
-                      </div>
-                    `;
-                  }).join('');
-                })()}
-              </div>
-            `}
-          </div>
-        </div>
-      `;
-
-      document.getElementById('backBtn').addEventListener('click', () => {
-        state.selectedStudent = null;
-        render();
-      });
-
-      // 퇴원 처리 버튼
-      const withdrawBtn = document.getElementById('withdrawBtn');
-      if (withdrawBtn) {
-        withdrawBtn.addEventListener('click', async () => {
-          if (confirm(`${student.studentName} 학생을 퇴원 처리하시겠습니까?\\n\\n퇴원생으로 이동하며, 나중에 재원 처리할 수 있습니다.`)) {
-            try {
-              await db.collection('students').doc(student.id).update({
-                status: 'withdrawn',
-                withdrawnAt: new Date().toISOString()
-              });
-              alert('퇴원 처리가 완료되었습니다.');
-              
-              // 상태 업데이트
-              student.status = 'withdrawn';
-              state.studentStatusFilter = 'withdrawn';
-              state.selectedStudent = null;
-              
-              // 데이터 새로고침
-              await loadAdminData(state.adminName);
-              render();
-            } catch (error) {
-              console.error('퇴원 처리 오류:', error);
-              alert('퇴원 처리 중 오류가 발생했습니다.');
-            }
-          }
-        });
-      }
-
-      // 재원 처리 버튼
-      const reactivateBtn = document.getElementById('reactivateBtn');
-      if (reactivateBtn) {
-        reactivateBtn.addEventListener('click', async () => {
-          if (confirm(`${student.studentName} 학생을 재원 처리하시겠습니까?\n\n재원생 목록으로 이동합니다.`)) {
-            try {
-              await db.collection('students').doc(student.id).update({
-                status: 'active',
-                reactivatedAt: new Date().toISOString()
-              });
-              alert('재원 처리가 완료되었습니다.');
-              
-              // 상태 업데이트
-              student.status = 'active';
-              state.studentStatusFilter = 'active';
-              state.selectedStudent = null;
-              
-              // 데이터 새로고침
-              await loadAdminData(state.adminName);
-              render();
-            } catch (error) {
-              console.error('재원 처리 오류:', error);
-              alert('재원 처리 중 오류가 발생했습니다.');
-            }
-          }
-        });
-      }
-    }
-
-    function renderMainScreen() {
-      const app = document.getElementById('app');
-      const currentStudentAttempts = state.allStudentData[state.studentName]?.attempts || [];
-
-      if (state.showResults) {
-        renderResultsScreen(app, currentStudentAttempts);
-        return;
-      }
-
-      if (!state.selectedCategory) {
-        renderCategorySelection(app);
-        return;
-      }
-
-      if (state.currentTheme === null) {
-        renderThemeSelection(app);
-        return;
-      }
-
-      renderQuizScreen(app);
-    }
-
-    function renderCategorySelection(app) {
-      app.innerHTML = `
-        <div class="min-h-screen p-6">
-          <div class="max-w-5xl mx-auto">
-            <div class="bg-gray-900 rounded-2xl p-6 mb-8 shadow-xl border border-orange-500/30">
-              <div class="flex items-center mb-4">
-                <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mr-3">
-                  ${icon('user', 'text-white')}
-                </div>
-                <h2 class="text-xl font-bold text-white">${state.studentName}</h2>
-              </div>
-              <div class="flex gap-2">
-                <button id="recordBtn" class="flex items-center px-5 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg font-bold text-white transition-all border border-gray-700 transform hover:scale-105 active:scale-95">
-                  ${icon('barChart', 'mr-2', 18)}학습 기록
-                </button>
-                <button id="logoutBtn" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-bold text-white transition-all transform hover:scale-105 active:scale-95 text-sm">
-                  로그아웃
-                </button>
-              </div>
-            </div>
-
-            <div class="grid md:grid-cols-2 gap-4">
-              ${categories.map(category => `
+            <!-- 학생 추가 -->
+            <div class="bg-gray-800 rounded-2xl p-6 mb-6 border border-gray-700">
+              <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                ${icon('plus', 'text-orange-500')}
+                학생 추가
+              </h2>
+              <form onsubmit="handleAddStudent(event)" class="flex gap-3">
+                <input
+                  type="text"
+                  id="newStudentName"
+                  required
+                  class="flex-1 bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500"
+                  placeholder="학생 이름"
+                />
+                <input
+                  type="password"
+                  id="newStudentPassword"
+                  required
+                  class="flex-1 bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500"
+                  placeholder="초기 비밀번호"
+                />
                 <button
-                  data-cat="${category.id}"
-                  class="cat-btn bg-gray-900 rounded-2xl p-6 border shadow-xl text-left transition-all transform ${
-                    category.chapters.length > 0
-                      ? 'border-gray-800 hover:shadow-orange-500/20 hover:border-orange-500/50 hover:scale-105 active:scale-95'
-                      : 'border-gray-800 opacity-50 cursor-not-allowed'
-                  }"
-                  ${category.chapters.length === 0 ? 'disabled' : ''}
+                  type="submit"
+                  class="bg-orange-500 hover:bg-orange-600 text-white font-bold px-6 rounded-lg transition-all"
                 >
-                  <h3 class="text-base font-bold text-white mb-2">${category.name}</h3>
-                  <p class="text-xs text-gray-500 font-semibold">
-                    ${category.chapters.length > 0 ? `${category.chapters.length}개의 테마` : '준비 중'}
-                  </p>
+                  추가
                 </button>
+              </form>
+            </div>
+
+            <!-- 학생 목록 -->
+            <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+              <h2 class="text-xl font-bold text-white mb-4">학생 목록 (${state.students.length}명)</h2>
+              ${state.students.length === 0 ? `
+                <p class="text-gray-400 text-center py-8">등록된 학생이 없습니다.</p>
+              ` : `
+                <div class="space-y-3">
+                  ${state.students.map(student => `
+                    <div class="bg-gray-700 rounded-xl p-4 flex items-center justify-between hover:bg-gray-600 transition-colors">
+                      <div class="flex items-center gap-3 flex-1">
+                        ${icon('user', 'text-blue-400')}
+                        <div class="flex-1">
+                          <p class="text-white font-medium">${student.name}</p>
+                          <p class="text-gray-400 text-xs">등록일: ${new Date(student.createdAt).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <div class="flex gap-2">
+                        <button
+                          onclick="selectStudent('${student.id}')"
+                          class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-all"
+                        >
+                          테스트 시작
+                        </button>
+                        <button
+                          onclick="showResetPassword('${student.id}', '${student.name}')"
+                          class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm transition-all"
+                        >
+                          ${icon('key', '', 16)}
+                        </button>
+                        <button
+                          onclick="confirmDeleteStudent('${student.id}', '${student.name}')"
+                          class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg transition-all"
+                        >
+                          ${icon('trash', '', 16)}
+                        </button>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              `}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderStudentHome() {
+      return `
+        <div class="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-4">
+          <div class="max-w-4xl mx-auto">
+            <!-- 헤더 -->
+            <div class="bg-gray-800 rounded-2xl p-6 mb-6 border border-gray-700">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  ${icon('user', 'text-blue-500', 32)}
+                  <div>
+                    <h1 class="text-2xl font-bold text-white">${state.userName} 학생</h1>
+                    <p class="text-gray-400 text-sm">복습할 챕터를 선택하세요</p>
+                  </div>
+                </div>
+                <button onclick="logout()" class="text-gray-400 hover:text-white transition-colors">
+                  ${icon('logout')}
+                </button>
+              </div>
+            </div>
+
+            <!-- 카테고리 목록 -->
+            <div class="space-y-4">
+              ${categories.map(category => `
+                <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+                  <h2 class="text-xl font-bold text-white mb-4">${category.name}</h2>
+                  <div class="space-y-2">
+                    ${category.chapters.map(chapter => {
+                      const progressKey = `${category.id}_${chapter.id}`;
+                      const chapterProgress = state.progress[progressKey];
+                      const isUnlocked = chapterProgress && chapterProgress.completedQuestions.length > 0;
+
+                      return `
+                        <button
+                          onclick="${isUnlocked ? `selectChapterForReview(${category.id}, ${chapter.id})` : 'void(0)'}"
+                          class="w-full bg-gray-700 rounded-xl p-4 flex items-center justify-between ${isUnlocked ? 'hover:bg-gray-600 cursor-pointer' : 'opacity-50 cursor-not-allowed'} transition-colors"
+                          ${!isUnlocked ? 'disabled' : ''}
+                        >
+                          <div class="flex items-center gap-3">
+                            ${isUnlocked ? icon('unlock', 'text-green-400') : icon('lock', 'text-gray-500')}
+                            <div class="text-left">
+                              <p class="text-white font-medium">${chapter.name}</p>
+                              ${isUnlocked ? `
+                                <p class="text-gray-400 text-sm">
+                                  진도: ${chapterProgress.completedQuestions.length}/${chapterProgress.totalQuestions} 문제
+                                </p>
+                              ` : `
+                                <p class="text-gray-500 text-sm">아직 테스트하지 않은 챕터입니다</p>
+                              `}
+                            </div>
+                          </div>
+                          ${isUnlocked ? icon('chevronRight', 'text-gray-400') : ''}
+                        </button>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
               `).join('')}
             </div>
           </div>
         </div>
       `;
-
-      document.getElementById('recordBtn').addEventListener('click', () => {
-        state.showResults = true;
-        state.recordSelectedCategory = null; // Chapter 선택 화면을 먼저 보여주기 위해 초기화
-        render();
-      });
-
-      document.getElementById('logoutBtn').addEventListener('click', () => {
-        if (confirm('로그아웃 하시겠습니까?')) {
-          logout();
-        }
-      });
-
-      document.querySelectorAll('.cat-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const catId = parseInt(btn.dataset.cat);
-          const category = categories.find(c => c.id === catId);
-          if (category && category.chapters && category.chapters.length > 0) {
-            state.selectedCategory = catId;
-            render();
-          }
-        });
-      });
     }
 
-    function renderThemeSelection(app) {
-      const category = categories.find(c => c.id === state.selectedCategory);
-      
-      app.innerHTML = `
-        <div class="min-h-screen p-6">
-          <div class="max-w-5xl mx-auto">
-            <div class="mb-4">
-              <button id="backBtn" class="text-sm text-orange-500 hover:text-orange-400 flex items-center font-semibold">
-                ${icon('chevronLeft', '', 16)}챕터 선택으로 돌아가기
-              </button>
-            </div>
+    // 이벤트 핸들러들
+    function showTeacherLogin() {
+      state.currentView = 'teacherLogin';
+      render();
+    }
 
-            <div class="bg-gray-900 rounded-2xl p-6 mb-8 shadow-xl border border-orange-500/30">
-              <div class="flex items-center justify-between mb-4">
-                <div>
-                  <h2 class="text-xl font-bold text-white">${category.name}</h2>
-                  <p class="text-sm text-gray-400 mt-1 font-medium">테마 선택</p>
+    function showStudentLogin() {
+      state.currentView = 'studentLogin';
+      render();
+    }
+
+    function backToLogin() {
+      state.currentView = 'login';
+      render();
+    }
+
+    function showRegisterScreen(type) {
+      state.registerType = type;
+      state.currentView = 'register';
+      render();
+    }
+
+    async function handleTeacherLogin(event) {
+      event.preventDefault();
+
+      const name = document.getElementById('teacherName').value.trim();
+      const key = document.getElementById('teacherKey').value;
+
+      if (!name || !key) {
+        alert('이름과 비밀번호를 모두 입력해주세요.');
+        return;
+      }
+
+      state.loading = true;
+      render();
+
+      try {
+        await teacherLogin(name, key);
+        state.isLoggedIn = true;
+        state.userType = 'teacher';
+        state.userId = name;
+        state.userName = name;
+
+        // 학생 목록 로드
+        state.students = await loadTeacherStudents(name);
+
+        state.currentView = 'teacherHome';
+        state.loading = false;
+        render();
+      } catch (error) {
+        state.loading = false;
+        alert(error.message);
+        render();
+      }
+    }
+
+    async function handleStudentLogin(event) {
+      event.preventDefault();
+
+      const name = document.getElementById('studentName').value.trim();
+      const password = document.getElementById('studentPassword').value;
+
+      if (!name || !password) {
+        alert('이름과 비밀번호를 모두 입력해주세요.');
+        return;
+      }
+
+      state.loading = true;
+      render();
+
+      try {
+        const studentData = await studentLogin(name, password);
+        state.isLoggedIn = true;
+        state.userType = 'student';
+        state.userId = studentData.id;
+        state.userName = studentData.name;
+
+        // 진도 데이터 로드
+        state.progress = await loadStudentProgress(studentData.id);
+
+        state.currentView = 'studentHome';
+        state.loading = false;
+        render();
+      } catch (error) {
+        state.loading = false;
+        alert(error.message);
+        render();
+      }
+    }
+
+    async function handleRegister(event, type) {
+      event.preventDefault();
+
+      const name = document.getElementById('registerName').value.trim();
+      const password = document.getElementById('registerPassword').value;
+      const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+
+      if (!name || !password || !passwordConfirm) {
+        alert('모든 필드를 입력해주세요.');
+        return;
+      }
+
+      if (password !== passwordConfirm) {
+        alert('비밀번호가 일치하지 않습니다.');
+        return;
+      }
+
+      if (password.length < 4) {
+        alert('비밀번호는 최소 4자 이상이어야 합니다.');
+        return;
+      }
+
+      state.loading = true;
+      render();
+
+      try {
+        if (type === 'teacher') {
+          await registerTeacher(name, password);
+          alert('가입이 완료되었습니다! 로그인해주세요.');
+          state.currentView = 'teacherLogin';
+        }
+
+        state.loading = false;
+        render();
+      } catch (error) {
+        state.loading = false;
+        alert(error.message);
+        render();
+      }
+    }
+
+    async function handleAddStudent(event) {
+      event.preventDefault();
+
+      const name = document.getElementById('newStudentName').value.trim();
+      const password = document.getElementById('newStudentPassword').value;
+
+      if (!name || !password) {
+        alert('학생 이름과 비밀번호를 모두 입력해주세요.');
+        return;
+      }
+
+      if (password.length < 4) {
+        alert('비밀번호는 최소 4자 이상이어야 합니다.');
+        return;
+      }
+
+      state.loading = true;
+      render();
+
+      try {
+        const newStudent = await addStudent(state.userName, name, password);
+        state.students.unshift(newStudent);
+
+        document.getElementById('newStudentName').value = '';
+        document.getElementById('newStudentPassword').value = '';
+
+        state.loading = false;
+        alert(`${name} 학생이 추가되었습니다!`);
+        render();
+      } catch (error) {
+        state.loading = false;
+        alert(error.message);
+        render();
+      }
+    }
+
+    async function confirmDeleteStudent(studentId, studentName) {
+      if (!confirm(`${studentName} 학생을 삭제하시겠습니까?\n모든 진도 데이터가 함께 삭제됩니다.`)) {
+        return;
+      }
+
+      state.loading = true;
+      render();
+
+      try {
+        await deleteStudent(studentId);
+        state.students = state.students.filter(s => s.id !== studentId);
+
+        state.loading = false;
+        alert(`${studentName} 학생이 삭제되었습니다.`);
+        render();
+      } catch (error) {
+        state.loading = false;
+        alert('삭제 중 오류가 발생했습니다: ' + error.message);
+        render();
+      }
+    }
+
+    function showResetPassword(studentId, studentName) {
+      const newPassword = prompt(`${studentName} 학생의 새 비밀번호를 입력하세요:`);
+
+      if (!newPassword) {
+        return;
+      }
+
+      if (newPassword.length < 4) {
+        alert('비밀번호는 최소 4자 이상이어야 합니다.');
+        return;
+      }
+
+      state.loading = true;
+      render();
+
+      resetStudentPassword(studentId, newPassword)
+        .then(() => {
+          state.loading = false;
+          alert(`${studentName} 학생의 비밀번호가 변경되었습니다.`);
+          render();
+        })
+        .catch(error => {
+          state.loading = false;
+          alert('비밀번호 변경 중 오류가 발생했습니다: ' + error.message);
+          render();
+        });
+    }
+
+    async function selectStudent(studentId) {
+      const student = state.students.find(s => s.id === studentId);
+      if (!student) return;
+
+      state.selectedStudent = student;
+
+      // 선택한 학생의 진도 데이터 로드
+      state.progress = await loadStudentProgress(studentId);
+
+      // 카테고리 선택 화면으로 전환
+      state.currentView = 'categorySelect';
+      render();
+    }
+
+    function selectChapterForReview(categoryId, chapterId) {
+      // 학생이 복습하기 위해 챕터 선택
+      state.currentCategory = categories.find(c => c.id === categoryId);
+      state.currentChapter = state.currentCategory.chapters.find(ch => ch.id === chapterId);
+
+      const progressKey = `${categoryId}_${chapterId}`;
+      const progress = state.progress[progressKey];
+
+      // 완료된 문제만 복습 가능
+      state.currentQuestionIndex = 0;
+      state.showingSimilar = false;
+      state.currentView = 'studentQuiz';
+      render();
+    }
+
+    function renderCategorySelect() {
+      const student = state.selectedStudent;
+
+      return `
+        <div class="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-4">
+          <div class="max-w-4xl mx-auto">
+            <!-- 헤더 -->
+            <div class="bg-gray-800 rounded-2xl p-6 mb-6 border border-gray-700">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <button onclick="backToTeacherHome()" class="text-gray-400 hover:text-white">
+                    ${icon('chevronLeft')}
+                  </button>
+                  <div>
+                    <h1 class="text-2xl font-bold text-white">${student.name} 학생</h1>
+                    <p class="text-gray-400 text-sm">테스트할 챕터를 선택하세요</p>
+                  </div>
                 </div>
-                <button id="resultsBtn" class="flex items-center px-5 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg font-bold text-white transition-all border border-gray-700 transform hover:scale-105 active:scale-95">
-                  ${icon('barChart', 'mr-2', 18)}학습 기록
+                <button onclick="logout()" class="text-gray-400 hover:text-white transition-colors">
+                  ${icon('logout')}
                 </button>
               </div>
-              
-              ${category.chapterInfo ? `
-                <div class="mt-4 pt-4 border-t border-gray-700">
-                  <div class="grid grid-cols-2 gap-3">
-                    ${category.chapterInfo.map(info => `
-                      <div class="bg-gray-800/50 rounded-lg p-3 border border-gray-700">
-                        <div class="flex items-baseline gap-2 mb-1">
-                          <span class="text-orange-400 font-bold text-xs">${info.partName}</span>
-                          <span class="text-gray-300 text-xs font-medium">${info.description}</span>
-                        </div>
-                        <span class="text-gray-500 text-xs">${info.range}</span>
-                      </div>
-                    `).join('')}
-                  </div>
-                </div>
-              ` : ''}
             </div>
 
-            <div class="grid md:grid-cols-2 gap-4">
-              ${category.chapters.map(theme => {
-                const status = getThemeStatus(state.selectedCategory, theme.id);
-                const locked = isLocked(state.selectedCategory, theme.id);
-                const remainingSeconds = getRemainingTime(state.selectedCategory, theme.id);
-                const minutes = Math.floor(remainingSeconds / 60);
-                const seconds = remainingSeconds % 60;
-                const isCompleted = status.status === 'completed';
+            <!-- 카테고리 목록 -->
+            <div class="space-y-4">
+              ${categories.map(category => `
+                <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+                  <h2 class="text-xl font-bold text-white mb-4">${category.name}</h2>
+                  <div class="space-y-2">
+                    ${category.chapters.map(chapter => {
+                      const progressKey = `${category.id}_${chapter.id}`;
+                      const chapterProgress = state.progress[progressKey];
+                      const completedCount = chapterProgress ? chapterProgress.completedQuestions.length : 0;
+                      const totalCount = chapter.questions.length;
 
-                return `
-                  <div class="bg-gray-900 rounded-2xl p-6 shadow-xl transition-all relative ${
-                    isCompleted 
-                      ? 'border-2 border-green-500/50 shadow-green-500/20' 
-                      : 'border border-gray-800 hover:shadow-orange-500/20 hover:border-orange-500/50'
-                  }">
-                    ${isCompleted ? `
-                      <div class="absolute top-4 right-4 flex items-center justify-center" style="width: 28px; height: 28px;">
-                        <svg style="width:28px;height:28px;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-500">
-                          <circle cx="12" cy="8" r="7"/>
-                          <path d="M8.21 13.89 7 23l5-3 5 3-1.21-9.12"/>
-                        </svg>
-                      </div>
-                    ` : ''}
-                    
-                    <div class="flex items-start justify-between mb-4">
-                      <h3 class="text-base font-bold text-white flex-1 pr-8">${theme.name}</h3>
-                    </div>
-                    
-                    <p class="text-xs text-gray-500 mb-4 font-semibold">${theme.questions.length}개 문제</p>
-                    
-                    ${status.lastAttempt ? `
-                      <div class="mb-4 p-4 bg-gray-800/50 rounded-xl border border-gray-700">
-                        <p class="text-xs text-gray-500 font-semibold mb-1">최근 시도</p>
-                        <p class="text-lg font-bold text-orange-400">
-                          ${status.lastAttempt.percentage}% <span class="text-sm text-gray-500">(${status.lastAttempt.correct}/${status.lastAttempt.total})</span>
-                        </p>
-                        <p class="text-xs text-gray-500 mt-1">시도 횟수: ${status.attemptCount}회</p>
-                      </div>
-                    ` : ''}
-
-                    ${isCompleted ? `
-                      <div class="space-y-2">
-                        <div class="w-full py-3 bg-gradient-to-r from-green-500 to-green-600 rounded-xl font-bold text-white text-center flex items-center justify-center text-sm shadow-lg shadow-green-500/30">
-                          ${icon('checkCircle', 'mr-2', 18)}퀴즈 완료
-                        </div>
-                        <button data-theme="${theme.id}" class="start-btn w-full py-2 bg-gray-800 hover:bg-gray-700 rounded-xl font-semibold text-white transition-all text-xs border border-gray-700 transform hover:scale-105 active:scale-95">
-                          다시 도전하기
+                      return `
+                        <button
+                          onclick="startChapterTest(${category.id}, ${chapter.id})"
+                          class="w-full bg-gray-700 rounded-xl p-4 flex items-center justify-between hover:bg-gray-600 transition-colors"
+                        >
+                          <div class="flex items-center gap-3">
+                            ${completedCount > 0 ? icon('check', 'text-green-400') : icon('chevronRight', 'text-gray-400')}
+                            <div class="text-left">
+                              <p class="text-white font-medium">${chapter.name}</p>
+                              <p class="text-gray-400 text-sm">
+                                진도: ${completedCount}/${totalCount} 문제 완료
+                              </p>
+                            </div>
+                          </div>
+                          ${icon('chevronRight', 'text-gray-400')}
                         </button>
-                      </div>
-                    ` : locked ? `
-                      <div class="space-y-3">
-                        <div class="w-full py-3 bg-gray-800/50 rounded-xl font-bold text-gray-400 text-center border border-gray-700 cursor-not-allowed flex items-center justify-center text-sm">
-                          ${icon('lock', 'mr-2', 16)}${icon('clock', 'mr-1', 16)}<span data-lock-timer="${theme.id}">${minutes}:${seconds.toString().padStart(2, '0')} 후 재시험 가능</span>
-                        </div>
-                        <button data-review="${theme.id}" class="review-btn w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-xl font-bold text-white transition-all text-sm shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transform hover:scale-105 active:scale-95 flex items-center justify-center">
-                          ${icon('bookOpen', 'mr-2', 18)}복습하기
-                        </button>
-                      </div>
-                    ` : status.status === 'retry' ? `
-                      <div class="space-y-3">
-                        <button data-theme="${theme.id}" class="start-btn w-full py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-xl font-bold text-white transition-all text-sm shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transform hover:scale-105 active:scale-95">
-                          퀴즈 다시 도전하기
-                        </button>
-                        ${(() => {
-                          const wrongIndices = status.lastAttempt?.wrongQuestionIndices || [];
-                          const hasWrongWithSimilar = wrongIndices.some(idx =>
-                            theme.questions[idx]?.similarQuestions &&
-                            theme.questions[idx].similarQuestions.length > 0
-                          );
-                          return hasWrongWithSimilar ? `
-                            <button data-wrong-test="${theme.id}" class="wrong-test-btn w-full py-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-xl font-bold text-white transition-all text-sm shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transform hover:scale-105 active:scale-95 flex items-center justify-center">
-                              ${icon('refresh', 'mr-2', 18)}오답테스트 보기
-                            </button>
-                          ` : '';
-                        })()}
-                      </div>
-                    ` : `
-                      <button data-theme="${theme.id}" class="start-btn w-full py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-xl font-bold text-white transition-all text-sm shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transform hover:scale-105 active:scale-95">
-                        퀴즈 시작
-                      </button>
-                    `}
+                      `;
+                    }).join('')}
                   </div>
-                `;
-              }).join('')}
+                </div>
+              `).join('')}
             </div>
           </div>
         </div>
       `;
-
-      document.getElementById('backBtn').addEventListener('click', () => {
-        state.selectedCategory = null;
-        render();
-      });
-
-      document.getElementById('resultsBtn').addEventListener('click', () => {
-        state.showResults = true;
-        state.recordSelectedCategory = state.selectedCategory; // 현재 선택된 카테고리를 학습 기록용으로 설정
-        render();
-      });
-
-      document.querySelectorAll('.start-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          handleStartQuiz(parseInt(btn.dataset.theme));
-        });
-      });
-
-      document.querySelectorAll('.wrong-test-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          handleStartWrongAnswerTest(parseInt(btn.dataset.wrongTest));
-        });
-      });
-
-      document.querySelectorAll('.review-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          state.showResults = true;
-          state.recordSelectedCategory = state.selectedCategory;
-          render();
-        });
-      });
     }
 
-    function renderQuizScreen(app) {
-      const category = categories.find(c => c.id === state.selectedCategory);
-      if (!category || !category.chapters) {
-        app.innerHTML = `<div class="min-h-screen flex items-center justify-center p-6"><p class="text-white">카테고리를 찾을 수 없습니다.</p></div>`;
-        return;
+    function renderQuiz() {
+      const category = state.currentCategory;
+      const chapter = state.currentChapter;
+      const questions = chapter.questions;
+      const currentQuestion = questions[state.currentQuestionIndex];
+
+      if (!currentQuestion) {
+        return renderQuizComplete();
       }
 
-      const theme = category.chapters.find(t => t.id === state.currentTheme);
-      if (!theme || !theme.questions) {
-        app.innerHTML = `<div class="min-h-screen flex items-center justify-center p-6"><p class="text-white">테마를 찾을 수 없습니다.</p></div>`;
-        return;
-      }
+      const progressKey = `${category.id}_${chapter.id}`;
+      const chapterProgress = state.progress[progressKey] || { completedQuestions: [] };
+      const completedCount = chapterProgress.completedQuestions.length;
+      const isCurrentCompleted = chapterProgress.completedQuestions.includes(state.currentQuestionIndex);
 
-      // 오답 테스트 모드인 경우 state.wrongAnswerTestQuestions 사용
-      const questions = state.isWrongAnswerTest ? state.wrongAnswerTestQuestions : theme.questions;
-      const themeName = state.isWrongAnswerTest ? `${theme.name} - 오답 테스트` : theme.name;
-
-      const question = questions[state.currentQuestion];
-      const answer = state.answers[state.currentQuestion];
-      const answeredCount = Object.keys(state.answers).length;
-      const correctCount = Object.values(state.answers).filter(a => a.correct).length;
-      const incorrectCount = answeredCount - correctCount;
-      const isComplete = answeredCount === questions.length;
-
-      app.innerHTML = `
-        <div class="min-h-screen p-6">
+      return `
+        <div class="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-4">
           <div class="max-w-4xl mx-auto">
-            <div class="mb-4">
-              <button id="backToThemeBtn" class="text-sm text-orange-500 hover:text-orange-400 flex items-center font-semibold">
-                ${icon('chevronLeft', '', 16)}테마 선택으로 돌아가기
-              </button>
-            </div>
-
-            <div class="bg-gray-900 rounded-2xl p-5 mb-6 shadow-xl border ${state.isWrongAnswerTest ? 'border-purple-500/30' : 'border-orange-500/30'}">
+            <!-- 헤더 -->
+            <div class="bg-gray-800 rounded-2xl p-6 mb-6 border border-gray-700">
+              <div class="flex items-center justify-between mb-4">
+                <button onclick="backToCategorySelect()" class="text-gray-400 hover:text-white flex items-center gap-2">
+                  ${icon('chevronLeft')}
+                  <span>뒤로</span>
+                </button>
+                <button onclick="logout()" class="text-gray-400 hover:text-white">
+                  ${icon('logout')}
+                </button>
+              </div>
               <div class="flex items-center justify-between">
                 <div>
-                  <h2 class="text-base font-bold text-white">${state.studentName}</h2>
-                  <p class="text-xs text-gray-400 mt-1 font-medium">${themeName}</p>
+                  <h1 class="text-xl font-bold text-white">${state.selectedStudent.name} 학생</h1>
+                  <p class="text-gray-400 text-sm">${category.name} - ${chapter.name}</p>
                 </div>
                 <div class="text-right">
-                  <p class="text-xs text-gray-500 font-semibold">진행 상황</p>
-                  <p class="text-lg font-bold ${state.isWrongAnswerTest ? 'text-purple-400' : 'text-orange-400'}">${state.currentQuestion + 1} / ${questions.length}</p>
+                  <p class="text-sm text-gray-400">진도</p>
+                  <p class="text-2xl font-bold text-orange-400">${completedCount}/${questions.length}</p>
                 </div>
               </div>
             </div>
 
-            <div class="bg-gray-900 rounded-2xl p-6 mb-6 shadow-xl border border-gray-800">
-              <div class="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <div class="text-2xl font-bold text-green-400">${correctCount}</div>
-                  <div class="text-xs text-gray-500 mt-1 font-medium">맞힌 개수</div>
-                </div>
-                <div>
-                  <div class="text-2xl font-bold text-red-400">${incorrectCount}</div>
-                  <div class="text-xs text-gray-500 mt-1 font-medium">틀린 개수</div>
-                </div>
-                <div>
-                  <div class="text-2xl font-bold text-orange-400">${answeredCount}</div>
-                  <div class="text-xs text-gray-500 mt-1 font-medium">답변 완료</div>
-                </div>
-              </div>
-            </div>
+            <!-- 문제 네비게이션 -->
+            <div class="bg-gray-800 rounded-2xl p-4 mb-6 border border-gray-700">
+              <p class="text-gray-400 text-sm mb-3">문제 선택</p>
+              <div class="flex flex-wrap gap-2">
+                ${questions.map((q, idx) => {
+                  const isCompleted = chapterProgress.completedQuestions.includes(idx);
+                  const isCurrent = idx === state.currentQuestionIndex;
 
-            <div class="bg-gradient-to-r from-orange-900/30 to-red-900/30 rounded-2xl p-4 mb-6 shadow-xl border-2 ${state.timerExpired ? 'border-red-500' : state.questionTimer <= 30 ? 'border-red-400' : 'border-orange-500/30'}">
-              <div class="flex items-center justify-center gap-2">
-                <div id="questionTimer" class="text-2xl font-bold"></div>
-              </div>
-            </div>
-
-            <div class="bg-gray-900 rounded-2xl p-8 border border-gray-800 shadow-xl mb-6">
-              <div class="mb-8">
-                <span class="inline-block px-3 py-1 bg-orange-500/20 text-orange-400 rounded-lg text-xs font-bold mb-4">
-                  문제 ${state.currentQuestion + 1}
-                </span>
-                <p class="text-lg leading-relaxed text-white font-medium">${question.question}</p>
-              </div>
-              
-              <div class="flex gap-3 mb-6">
-                ${['O', 'X'].map(opt => {
-                  let btnClass = 'flex-1 py-4 px-6 rounded-xl font-bold text-2xl transition-all transform ';
-                  
-                  if (!answer) {
-                    btnClass += 'bg-gray-800 hover:bg-gray-700 border-2 border-gray-700 text-white hover:scale-105 active:scale-95 cursor-pointer';
+                  let btnClass = 'px-4 py-2 rounded-lg font-medium transition-all ';
+                  if (isCurrent) {
+                    btnClass += 'bg-orange-500 text-white ring-2 ring-orange-300';
+                  } else if (isCompleted) {
+                    btnClass += 'bg-green-600 text-white hover:bg-green-700';
                   } else {
-                    if (answer.selected === opt) {
-                      if (answer.correct) {
-                        btnClass += 'bg-gradient-to-r from-green-500 to-green-600 border-2 border-green-400 text-white shadow-lg shadow-green-500/50';
-                      } else {
-                        btnClass += 'bg-gradient-to-r from-red-500 to-red-600 border-2 border-red-400 text-white shadow-lg shadow-red-500/50';
-                      }
-                    } else if (question.answer === opt) {
-                      btnClass += 'bg-gradient-to-r from-green-500 to-green-600 border-2 border-green-400 text-white shadow-lg shadow-green-500/50';
-                    } else {
-                      btnClass += 'bg-gray-800/30 border-2 border-gray-700 opacity-40 text-gray-600';
-                    }
-                    btnClass += ' cursor-not-allowed';
+                    btnClass += 'bg-gray-700 text-gray-300 hover:bg-gray-600';
                   }
 
                   return `
-                    <button data-answer="${opt}" class="answer-btn ${btnClass}">
-                      ${answer?.selected === opt ? (answer.correct ? icon('checkCircle', 'inline mr-2', 22) : icon('xCircle', 'inline mr-2', 22)) : ''}
-                      ${opt}
+                    <button onclick="goToQuestion(${idx})" class="${btnClass}">
+                      ${idx + 1}
                     </button>
                   `;
                 }).join('')}
               </div>
-              
-              ${answer ? `
-                <div class="p-5 rounded-xl border-2 ${answer.correct ? 'bg-green-900/20 border-green-500/50' : 'bg-red-900/20 border-red-500/50'}">
-                  <p class="font-bold text-sm mb-3" style="color: ${answer.correct ? '#4ade80' : '#f87171'}">
-                    ${answer.correct ? '✓ 정답입니다!' : '✗ 오답입니다.'}
-                  </p>
-                  <div class="mt-3">
-                    <label class="text-sm text-gray-300 font-bold mb-2 block">📝 선생님 메모:</label>
-                    <textarea
-                      id="teacherNote-${state.currentQuestion}"
-                      class="w-full p-3 bg-gray-900/50 border border-gray-700 rounded-lg text-sm text-gray-300 focus:border-orange-500 focus:outline-none resize-none"
-                      rows="3"
-                      placeholder="이 문제에 대한 메모를 입력하세요..."
-                    >${state.teacherNotes?.[state.currentTheme]?.[state.currentQuestion] || ''}</textarea>
-                  </div>
-                </div>
-              ` : ''}
             </div>
 
-            <div class="flex gap-3">
-              <button id="prevBtn" class="flex items-center px-5 py-3 bg-gray-800 hover:bg-gray-700 disabled:bg-gray-800/30 disabled:cursor-not-allowed rounded-xl font-bold transition-all border border-gray-700 disabled:border-gray-800 text-white disabled:text-gray-600 text-sm transform hover:scale-105 active:scale-95 disabled:scale-100" ${state.currentQuestion === 0 ? 'disabled' : ''}>
-                ${icon('chevronLeft', 'mr-1', 18)}이전
-              </button>
-              
-              ${state.currentQuestion < questions.length - 1 ? `
-                <button id="nextBtn" class="flex-1 flex items-center justify-center px-5 py-3 bg-gradient-to-r ${state.isWrongAnswerTest ? 'from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700' : 'from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700'} rounded-xl font-bold transition-all text-white text-sm shadow-lg ${state.isWrongAnswerTest ? 'shadow-purple-500/30 hover:shadow-purple-500/50' : 'shadow-orange-500/30 hover:shadow-orange-500/50'} transform hover:scale-105 active:scale-95">
-                  다음${icon('chevronRight', 'ml-1', 18)}
-                </button>
-              ` : `
-                <button id="finishBtn" class="flex-1 px-5 py-3 rounded-xl font-bold transition-all text-sm transform ${
-                  isComplete
-                    ? correctCount === questions.length
-                      ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg shadow-green-500/30 hover:scale-105 active:scale-95'
-                      : `bg-gradient-to-r ${state.isWrongAnswerTest ? 'from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700' : 'from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700'} text-white shadow-lg ${state.isWrongAnswerTest ? 'shadow-purple-500/30 hover:shadow-purple-500/50' : 'shadow-orange-500/30 hover:shadow-orange-500/50'} hover:scale-105 active:scale-95`
-                    : 'bg-gray-800/30 cursor-not-allowed border border-gray-700 text-gray-600 scale-100'
-                }" ${!isComplete ? 'disabled' : ''}>
-                  ${isComplete ? (state.isWrongAnswerTest ? '완료' : '결과 저장하고 완료') : '모든 문제를 풀어주세요'}
-                </button>
-              `}
-            </div>
-
-            ${isComplete ? `
-              <div class="mt-6 border-2 rounded-2xl p-6 shadow-xl ${
-                correctCount === questions.length
-                  ? 'bg-green-900/20 border-green-500/50'
-                  : state.isWrongAnswerTest
-                    ? 'bg-purple-900/20 border-purple-500/50'
-                    : 'bg-orange-900/20 border-orange-500/50'
-              }">
-                <h3 class="text-xl font-bold mb-4 text-center ${
-                  correctCount === questions.length ? 'text-green-400' : state.isWrongAnswerTest ? 'text-purple-400' : 'text-orange-400'
-                }">
-                  ${correctCount === questions.length ? '🎉 완벽합니다!' : state.isWrongAnswerTest ? '오답 테스트 완료!' : '퀴즈 완료!'}
-                </h3>
-                <p class="text-base text-center mb-3 text-white font-medium">
-                  총 ${questions.length}문제 중 <span class="text-green-400 font-bold">${correctCount}문제</span> 맞히셨습니다!
-                </p>
-                <p class="text-sm text-center mb-4 text-gray-300 font-medium">
-                  정답률: <span class="font-bold text-lg ${
-                    correctCount === questions.length ? 'text-green-400' : state.isWrongAnswerTest ? 'text-purple-400' : 'text-orange-400'
-                  }">
-                    ${Math.round((correctCount / questions.length) * 100)}%
+            <!-- 문제 표시 -->
+            <div class="bg-gray-800 rounded-2xl p-8 mb-6 border border-gray-700">
+              <div class="mb-6">
+                <div class="flex items-center justify-between mb-4">
+                  <span class="inline-block px-3 py-1 bg-orange-500/20 text-orange-400 rounded-lg text-sm font-bold">
+                    문제 ${state.currentQuestionIndex + 1}
                   </span>
-                </p>
-                ${!state.isWrongAnswerTest && correctCount < questions.length ? `
-                  <p class="text-center text-xs text-gray-400 font-medium">
-                    💡 1분 후 재도전 가능. 힌트를 복습하세요!
-                  </p>
+                  ${isCurrentCompleted ? `
+                    <span class="inline-flex items-center gap-2 px-3 py-1 bg-green-500/20 text-green-400 rounded-lg text-sm font-bold">
+                      ${icon('check', '', 16)}
+                      완료됨
+                    </span>
+                  ` : ''}
+                </div>
+                <div class="text-lg leading-relaxed text-white">${currentQuestion.question}</div>
+              </div>
+
+              <!-- 버튼들 -->
+              <div class="flex gap-3">
+                ${state.currentQuestionIndex > 0 ? `
+                  <button
+                    onclick="previousQuestion()"
+                    class="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
+                  >
+                    ${icon('chevronLeft', '', 20)}
+                    이전 문제
+                  </button>
+                ` : ''}
+
+                <button
+                  onclick="markQuestionComplete()"
+                  class="flex-1 ${isCurrentCompleted ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-500 hover:bg-blue-600'} text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
+                >
+                  ${icon('check', '', 20)}
+                  ${isCurrentCompleted ? '완료됨' : '완료'}
+                </button>
+
+                ${state.currentQuestionIndex < questions.length - 1 ? `
+                  <button
+                    onclick="nextQuestion()"
+                    class="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
+                  >
+                    다음 문제
+                    ${icon('chevronRight', '', 20)}
+                  </button>
+                ` : `
+                  <button
+                    onclick="finishTest()"
+                    class="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
+                  >
+                    ${icon('check', '', 20)}
+                    테스트 종료
+                  </button>
+                `}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderStudentQuiz() {
+      const category = state.currentCategory;
+      const chapter = state.currentChapter;
+      const progressKey = `${category.id}_${chapter.id}`;
+      const chapterProgress = state.progress[progressKey];
+
+      if (!chapterProgress || chapterProgress.completedQuestions.length === 0) {
+        return `
+          <div class="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center p-4">
+            <div class="text-center">
+              <p class="text-white text-xl mb-4">아직 테스트한 문제가 없습니다.</p>
+              <button onclick="backToStudentHome()" class="text-blue-400 hover:text-blue-300">
+                홈으로 돌아가기
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      const completedIndices = chapterProgress.completedQuestions;
+      const questions = chapter.questions.filter((q, idx) => completedIndices.includes(idx));
+
+      if (state.currentQuestionIndex >= completedIndices.length) {
+        state.currentQuestionIndex = 0;
+      }
+
+      const actualIndex = completedIndices[state.currentQuestionIndex];
+      const currentQuestion = chapter.questions[actualIndex];
+
+      return `
+        <div class="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-4">
+          <div class="max-w-4xl mx-auto">
+            <!-- 헤더 -->
+            <div class="bg-gray-800 rounded-2xl p-6 mb-6 border border-gray-700">
+              <div class="flex items-center justify-between mb-4">
+                <button onclick="backToStudentHome()" class="text-gray-400 hover:text-white flex items-center gap-2">
+                  ${icon('chevronLeft')}
+                  <span>뒤로</span>
+                </button>
+                <button onclick="logout()" class="text-gray-400 hover:text-white">
+                  ${icon('logout')}
+                </button>
+              </div>
+              <div class="flex items-center justify-between">
+                <div>
+                  <h1 class="text-xl font-bold text-white">복습 모드</h1>
+                  <p class="text-gray-400 text-sm">${category.name} - ${chapter.name}</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-sm text-gray-400">테스트 완료</p>
+                  <p class="text-2xl font-bold text-blue-400">${completedIndices.length}/${chapter.questions.length}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 문제 표시 -->
+            <div class="bg-gray-800 rounded-2xl p-8 mb-6 border border-gray-700">
+              <div class="mb-6">
+                <span class="inline-block px-3 py-1 bg-blue-500/20 text-blue-400 rounded-lg text-sm font-bold mb-4">
+                  문제 ${actualIndex + 1} (${state.currentQuestionIndex + 1}/${completedIndices.length})
+                </span>
+                <div class="text-lg leading-relaxed text-white">${currentQuestion.question}</div>
+              </div>
+
+              <!-- 네비게이션 -->
+              <div class="flex gap-3">
+                ${state.currentQuestionIndex > 0 ? `
+                  <button
+                    onclick="previousStudentQuestion()"
+                    class="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
+                  >
+                    ${icon('chevronLeft', '', 20)}
+                    이전 문제
+                  </button>
+                ` : ''}
+
+                ${state.currentQuestionIndex < completedIndices.length - 1 ? `
+                  <button
+                    onclick="nextStudentQuestion()"
+                    class="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
+                  >
+                    다음 문제
+                    ${icon('chevronRight', '', 20)}
+                  </button>
                 ` : ''}
               </div>
-            ` : ''}
-          </div>
-        </div>
-      `;
-
-      document.getElementById('backToThemeBtn').addEventListener('click', () => {
-        stopQuestionTimer();
-        state.currentTheme = null;
-        state.currentQuestion = 0;
-        state.answers = {};
-        state.isWrongAnswerTest = false;
-        state.wrongAnswerTestQuestions = [];
-        render();
-      });
-
-      if (state.currentQuestion > 0) {
-        document.getElementById('prevBtn').addEventListener('click', handlePrev);
-      }
-
-      if (state.currentQuestion < questions.length - 1) {
-        document.getElementById('nextBtn').addEventListener('click', handleNext);
-      } else {
-        const finishBtn = document.getElementById('finishBtn');
-        if (finishBtn && isComplete) {
-          finishBtn.addEventListener('click', async () => {
-            console.log('완료 버튼 클릭됨');
-
-            if (state.isWrongAnswerTest) {
-              // 오답 테스트는 결과를 저장하지 않고 테마 선택으로 돌아감
-              stopQuestionTimer();
-              state.currentTheme = null;
-              state.currentQuestion = 0;
-              state.answers = {};
-              state.isWrongAnswerTest = false;
-              state.wrongAnswerTestQuestions = [];
-              render();
-            } else {
-              // 일반 퀴즈는 결과를 저장
-              finishBtn.disabled = true;
-              finishBtn.textContent = '저장 중...';
-              try {
-                await handleFinishQuiz();
-              } catch (error) {
-                console.error('완료 처리 오류:', error);
-                alert('오류 발생: ' + error.message);
-                finishBtn.disabled = false;
-                finishBtn.textContent = '결과 저장하고 완료';
-              }
-            }
-          });
-        }
-      }
-
-      if (!answer) {
-        document.querySelectorAll('.answer-btn').forEach(btn => {
-          btn.addEventListener('click', () => {
-            handleAnswer(btn.dataset.answer);
-          });
-        });
-      }
-
-      // 선생님 메모 저장
-      const teacherNoteTextarea = document.getElementById(`teacherNote-${state.currentQuestion}`);
-      if (teacherNoteTextarea) {
-        teacherNoteTextarea.addEventListener('input', (e) => {
-          if (!state.teacherNotes[state.currentTheme]) {
-            state.teacherNotes[state.currentTheme] = {};
-          }
-          state.teacherNotes[state.currentTheme][state.currentQuestion] = e.target.value;
-        });
-      }
-
-      // 타이머 표시 업데이트
-      updateTimerDisplay();
-    }
-
-    function renderResultsScreen(app, currentStudentAttempts) {
-      const categoryAttempts = state.recordSelectedCategory 
-        ? currentStudentAttempts.filter(a => a.categoryId === state.recordSelectedCategory)
-        : [];
-
-      app.innerHTML = `
-        <div class="min-h-screen p-6">
-          <div class="max-w-5xl mx-auto">
-            <div class="bg-gray-900 rounded-2xl p-6 mb-6 shadow-xl border border-orange-500/30">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                  <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mr-3">
-                    ${icon('user', 'text-white')}
-                  </div>
-                  <div>
-                    <h2 class="text-xl font-bold text-white">${state.studentName}</h2>
-                    <p class="text-sm text-gray-400">학습 기록</p>
-                  </div>
-                </div>
-                <button id="backBtn" class="px-5 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg font-bold text-white transition-all border border-gray-700 transform hover:scale-105 active:scale-95">
-                  돌아가기
-                </button>
-              </div>
             </div>
-
-            ${state.recordSelectedCategory ? `
-              <div class="mb-4">
-                <button id="allRecordsBtn" class="text-sm text-orange-500 hover:text-orange-400 flex items-center font-semibold">
-                  ${icon('chevronLeft', '', 16)}챕터 선택으로 돌아가기
-                </button>
-              </div>
-              
-              <h3 class="text-lg font-bold text-white mb-4">
-                ${categories.find(c => c.id === state.recordSelectedCategory)?.name}
-              </h3>
-
-              ${categoryAttempts.length === 0 ? `
-                <div class="bg-gray-900 rounded-2xl p-12 text-center border border-gray-800">
-                  ${icon('barChart', 'mx-auto mb-4 text-gray-600', 48)}
-                  <p class="text-gray-400 font-medium">이 챕터의 학습 기록이 없습니다.</p>
-                </div>
-              ` : `
-                <div class="space-y-4">
-                  ${(() => {
-                    // Theme별로 그룹화 (themeId 기준으로 정렬)
-                    const themeGroups = {};
-                    categoryAttempts.forEach(attempt => {
-                      const key = attempt.themeId;
-                      if (!themeGroups[key]) {
-                        themeGroups[key] = [];
-                      }
-                      themeGroups[key].push(attempt);
-                    });
-
-                    // themeId 순서대로 정렬
-                    const sortedThemeIds = Object.keys(themeGroups).map(Number).sort((a, b) => a - b);
-
-                    return sortedThemeIds.map(themeId => {
-                      const attempts = themeGroups[themeId];
-                      if (!attempts || attempts.length === 0) return '';
-                      const lastAttempt = attempts[attempts.length - 1];
-                      const allWrongQuestions = attempts
-                        .flatMap(a => a.wrongQuestions || [])
-                        .filter((q, idx, arr) => arr.indexOf(q) === idx);
-
-                      const isRetakeAvailable = lastAttempt.percentage < 100;
-                      const category = categories.find(c => c.id === lastAttempt.categoryId);
-                      const theme = category?.chapters?.find(t => t.id === lastAttempt.themeId);
-
-                      // theme나 questions가 없으면 기본 정보만 표시
-                      if (!theme || !theme.questions) {
-                        return `
-                          <div class="bg-gray-900 rounded-2xl p-6 border border-gray-800 shadow-xl relative">
-                            <div class="flex justify-between items-start mb-4">
-                              <div>
-                                <h3 class="text-base font-bold text-white mb-1">${lastAttempt.themeName}</h3>
-                                <p class="text-xs text-gray-500">최종 시도: ${lastAttempt.date}</p>
-                              </div>
-                              <div class="text-right">
-                                <div class="text-2xl font-bold ${lastAttempt.percentage === 100 ? 'text-green-400' : 'text-orange-400'}">
-                                  ${lastAttempt.percentage}%
-                                </div>
-                                <div class="text-xs text-gray-500 font-semibold">${lastAttempt.correct} / ${lastAttempt.total}</div>
-                              </div>
-                            </div>
-                            <p class="text-gray-400 text-sm">문제 정보를 불러올 수 없습니다.</p>
-                          </div>
-                        `;
-                      }
-
-                      return `
-                        <div class="bg-gray-900 rounded-2xl p-6 border border-gray-800 shadow-xl relative">
-                          <div class="flex justify-between items-start mb-4">
-                            <div>
-                              <h3 class="text-base font-bold text-white mb-1">${lastAttempt.themeName}</h3>
-                              <p class="text-xs text-gray-500">최종 시도: ${lastAttempt.date}</p>
-                            </div>
-                            <div class="text-right">
-                              <div class="text-2xl font-bold ${lastAttempt.percentage === 100 ? 'text-green-400' : 'text-orange-400'}">
-                                ${lastAttempt.percentage}%
-                              </div>
-                              <div class="text-xs text-gray-500 font-semibold">${lastAttempt.correct} / ${lastAttempt.total}</div>
-                            </div>
-                          </div>
-                          
-                          <div class="grid grid-cols-3 gap-4 pt-4 border-t border-gray-800 mb-4">
-                            <div class="text-center">
-                              <div class="text-lg font-bold text-green-400">${lastAttempt.correct}</div>
-                              <div class="text-xs text-gray-500">맞힌 개수</div>
-                            </div>
-                            <div class="text-center">
-                              <div class="text-lg font-bold text-red-400">${lastAttempt.total - lastAttempt.correct}</div>
-                              <div class="text-xs text-gray-500">틀린 개수</div>
-                            </div>
-                            <div class="text-center">
-                              <div class="text-lg font-bold text-blue-400">${attempts.length}</div>
-                              <div class="text-xs text-gray-500">시도 횟수</div>
-                            </div>
-                          </div>
-
-                          ${isRetakeAvailable ? `
-                            <button 
-                              data-category="${lastAttempt.categoryId}" 
-                              data-theme="${lastAttempt.themeId}" 
-                              class="retake-btn w-full mb-4 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-xl font-bold text-white transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-orange-500/30"
-                            >
-                              🔥 재시험 도전하기
-                            </button>
-                          ` : `
-                            <div class="mb-4 px-6 py-3 bg-green-900/20 border border-green-500/30 rounded-xl text-center">
-                              <p class="text-green-400 font-bold text-sm flex items-center justify-center gap-2">
-                                ${icon('checkCircle', '', 18)}
-                                완벽하게 마스터했습니다!
-                              </p>
-                            </div>
-                          `}
-
-                          <div class="bg-gray-900/20 border border-gray-700 rounded-xl p-4">
-                            <h4 class="text-sm font-bold text-white mb-3 flex items-center flex-wrap gap-2">
-                              <span class="flex items-center">
-                                ${icon('bookOpen', 'mr-2', 18)}모든 문제 복습
-                              </span>
-                            </h4>
-                            <div class="space-y-3">
-                              ${theme.questions.map((q, questionIndex) => {
-                                const isWrong = allWrongQuestions.includes(q.question);
-                                const teacherNote = state.teacherNotes?.[theme.id]?.[questionIndex];
-                                return `
-                                  <div class="text-sm bg-gray-900/50 rounded-lg p-3 border ${isWrong ? 'border-red-500/30' : 'border-green-500/30'}">
-                                    <div class="flex items-start gap-2 mb-2">
-                                      ${isWrong
-                                        ? `<span class="text-red-400 font-bold flex-shrink-0">✗</span>`
-                                        : `<span class="text-green-400 font-bold flex-shrink-0">✓</span>`
-                                      }
-                                      <p class="${isWrong ? 'text-red-300' : 'text-green-300'} font-medium leading-relaxed">${q.question}</p>
-                                    </div>
-                                    ${teacherNote ? `
-                                      <p class="text-gray-400 text-xs leading-relaxed mt-2 p-2 bg-gray-800/50 rounded ml-6">
-                                        <span class="text-blue-400 font-bold">📝 선생님 메모:</span> ${teacherNote}
-                                      </p>
-                                    ` : ''}
-                                  </div>
-                                `;
-                              }).join('')}
-                            </div>
-                          </div>
-                        </div>
-                      `;
-                    }).join('');
-                  })()}
-                </div>
-              `}
-            ` : currentStudentAttempts.length === 0 ? `
-              <div class="bg-gray-900 rounded-2xl p-12 text-center border border-gray-800">
-                ${icon('barChart', 'mx-auto mb-4 text-gray-600', 48)}
-                <p class="text-gray-400 font-medium">아직 학습 기록이 없습니다.</p>
-              </div>
-            ` : `
-              <div class="grid md:grid-cols-2 gap-4">
-                ${categories.filter(cat => currentStudentAttempts.some(a => a.categoryId === cat.id)).map((cat) => {
-                  const catAttempts = currentStudentAttempts.filter(a => a.categoryId === cat.id);
-                  const avgPercentage = Math.round(catAttempts.reduce((sum, a) => sum + a.percentage, 0) / catAttempts.length);
-                  
-                  return `
-                    <button data-cat="${cat.id}" class="cat-record-btn bg-gray-900 rounded-2xl p-6 border border-gray-800 shadow-xl hover:shadow-orange-500/20 hover:border-orange-500/50 transition-all text-left transform hover:scale-105 active:scale-95">
-                      <h3 class="text-base font-bold text-white mb-2">${cat.name}</h3>
-                      <div class="flex items-center justify-between">
-                        <span class="text-xs text-gray-500 font-semibold">평균 정답률</span>
-                        <span class="text-lg font-bold text-orange-400">${avgPercentage}%</span>
-                      </div>
-                      <div class="text-xs text-gray-500 mt-2 font-medium">
-                        시도 횟수: ${catAttempts.length}회
-                      </div>
-                    </button>
-                  `;
-                }).join('')}
-              </div>
-            `}
           </div>
         </div>
       `;
+    }
 
-      document.getElementById('backBtn').addEventListener('click', () => {
-        state.showResults = false;
-        state.recordSelectedCategory = null; // 초기화
+    function renderQuizComplete() {
+      return `
+        <div class="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center p-4">
+          <div class="bg-gray-800 rounded-2xl p-8 border border-gray-700 text-center max-w-md">
+            <div class="text-6xl mb-6">🎉</div>
+            <h2 class="text-2xl font-bold text-white mb-4">테스트 완료!</h2>
+            <p class="text-gray-400 mb-6">모든 진도가 저장되었습니다.</p>
+            <button
+              onclick="backToCategorySelect()"
+              class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-xl transition-all"
+            >
+              돌아가기
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // 퀴즈 관련 함수들
+    function startChapterTest(categoryId, chapterId) {
+      state.currentCategory = categories.find(c => c.id === categoryId);
+      state.currentChapter = state.currentCategory.chapters.find(ch => ch.id === chapterId);
+      state.currentQuestionIndex = 0;
+      state.currentView = 'quiz';
+      render();
+    }
+
+    function goToQuestion(index) {
+      state.currentQuestionIndex = index;
+      render();
+    }
+
+    function previousQuestion() {
+      if (state.currentQuestionIndex > 0) {
+        state.currentQuestionIndex--;
         render();
-      });
+      }
+    }
 
-      if (state.recordSelectedCategory) {
-        const allRecordsBtn = document.getElementById('allRecordsBtn');
-        if (allRecordsBtn) {
-          allRecordsBtn.addEventListener('click', () => {
-            state.recordSelectedCategory = null;
-            render();
-          });
+    function nextQuestion() {
+      if (state.currentQuestionIndex < state.currentChapter.questions.length - 1) {
+        state.currentQuestionIndex++;
+        render();
+      }
+    }
+
+    function previousStudentQuestion() {
+      if (state.currentQuestionIndex > 0) {
+        state.currentQuestionIndex--;
+        render();
+      }
+    }
+
+    function nextStudentQuestion() {
+      const progressKey = `${state.currentCategory.id}_${state.currentChapter.id}`;
+      const chapterProgress = state.progress[progressKey];
+      const completedIndices = chapterProgress.completedQuestions;
+
+      if (state.currentQuestionIndex < completedIndices.length - 1) {
+        state.currentQuestionIndex++;
+        render();
+      }
+    }
+
+    async function markQuestionComplete() {
+      const category = state.currentCategory;
+      const chapter = state.currentChapter;
+      const progressKey = `${category.id}_${chapter.id}`;
+
+      // 현재 진도 가져오기
+      let chapterProgress = state.progress[progressKey] || { completedQuestions: [] };
+
+      // 현재 문제가 이미 완료되지 않았으면 추가
+      if (!chapterProgress.completedQuestions.includes(state.currentQuestionIndex)) {
+        chapterProgress.completedQuestions.push(state.currentQuestionIndex);
+        chapterProgress.completedQuestions.sort((a, b) => a - b);
+
+        // Firebase에 저장
+        try {
+          await saveProgress(
+            state.selectedStudent.id,
+            state.selectedStudent.name,
+            category.id,
+            chapter.id,
+            category.name,
+            chapter.name,
+            chapterProgress.completedQuestions,
+            chapter.questions.length
+          );
+
+          // 로컬 state 업데이트
+          state.progress[progressKey] = chapterProgress;
+
+          render();
+        } catch (error) {
+          alert('진도 저장 중 오류가 발생했습니다: ' + error.message);
         }
+      }
+    }
 
-        // 재시험 버튼 이벤트 리스너
-        document.querySelectorAll('.retake-btn').forEach(btn => {
-          btn.addEventListener('click', () => {
-            const categoryId = parseInt(btn.dataset.category);
-            const themeId = parseInt(btn.dataset.theme);
-            
-            // 재시험 시작
-            state.showResults = false;
-            state.selectedCategory = categoryId;
-            state.currentTheme = themeId;
-            state.currentQuestion = 0;
-            state.answers = {};
-            render();
-          });
-        });
-      } else {
-        document.querySelectorAll('.cat-record-btn').forEach(btn => {
-          btn.addEventListener('click', () => {
-            state.recordSelectedCategory = parseInt(btn.dataset.cat);
-            render();
-          });
+    async function finishTest() {
+      if (confirm('테스트를 종료하시겠습니까?')) {
+        state.currentView = 'categorySelect';
+        state.currentQuestionIndex = 0;
+        render();
+      }
+    }
+
+    function backToTeacherHome() {
+      state.selectedStudent = null;
+      state.currentCategory = null;
+      state.currentChapter = null;
+      state.currentQuestionIndex = 0;
+      state.currentView = 'teacherHome';
+      render();
+    }
+
+    function backToCategorySelect() {
+      state.currentCategory = null;
+      state.currentChapter = null;
+      state.currentQuestionIndex = 0;
+      state.currentView = 'categorySelect';
+      render();
+    }
+
+    function backToStudentHome() {
+      state.currentCategory = null;
+      state.currentChapter = null;
+      state.currentQuestionIndex = 0;
+      state.currentView = 'studentHome';
+      render();
+    }
+
+    function logout() {
+      if (!confirm('로그아웃 하시겠습니까?')) {
+        return;
+      }
+
+      state.isLoggedIn = false;
+      state.userType = null;
+      state.userId = null;
+      state.userName = null;
+      state.selectedStudent = null;
+      state.students = [];
+      state.currentView = 'login';
+      state.currentCategory = null;
+      state.currentChapter = null;
+      state.currentQuestionIndex = 0;
+      state.showingSimilar = false;
+      state.progress = {};
+
+      render();
+    }
+
+    // 메인 렌더 함수
+    function render() {
+      const app = document.getElementById('app');
+
+      if (state.loading) {
+        app.innerHTML = `
+          <div class="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center">
+            <div class="text-white text-xl">로딩 중...</div>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+
+      switch (state.currentView) {
+        case 'login':
+          html = renderLoginScreen();
+          break;
+        case 'teacherLogin':
+          html = renderTeacherLoginForm();
+          break;
+        case 'studentLogin':
+          html = renderStudentLoginForm();
+          break;
+        case 'register':
+          html = renderRegisterScreen(state.registerType);
+          break;
+        case 'teacherHome':
+          html = renderTeacherHome();
+          break;
+        case 'studentHome':
+          html = renderStudentHome();
+          break;
+        case 'categorySelect':
+          html = renderCategorySelect();
+          break;
+        case 'quiz':
+          html = renderQuiz();
+          break;
+        case 'studentQuiz':
+          html = renderStudentQuiz();
+          break;
+        default:
+          html = renderLoginScreen();
+      }
+
+      app.innerHTML = html;
+
+      // KaTeX 렌더링
+      if (window.renderMathInElement) {
+        renderMathInElement(document.body, {
+          delimiters: [
+            {left: '\\(', right: '\\)', display: false},
+            {left: '\\[', right: '\\]', display: true}
+          ],
+          throwOnError: false
         });
       }
     }
 
-    // 온라인/오프라인 이벤트
-    window.addEventListener('online', async () => {
-      console.log('온라인 복구됨! 동기화 시작...');
-      await syncPendingData();
-    });
-
-    window.addEventListener('offline', () => {
-      console.log('오프라인 모드');
-      alert('오프라인 상태입니다. 데이터는 로컬에 저장되며 온라인 복구 시 자동 동기화됩니다.');
-    });
-
-    // 타이머 시작
-    setInterval(() => {
-      state.currentTime = Date.now();
-      
-      document.querySelectorAll('[data-lock-timer]').forEach(element => {
-        const themeId = parseInt(element.getAttribute('data-lock-timer'));
-        if (isLocked(state.selectedCategory, themeId)) {
-          const remainingSeconds = getRemainingTime(state.selectedCategory, themeId);
-          const minutes = Math.floor(remainingSeconds / 60);
-          const seconds = remainingSeconds % 60;
-          element.textContent = `${minutes}:${seconds.toString().padStart(2, '0')} 후 재시험 가능`;
-        } else {
-          render();
-        }
-      });
-    }, 1000);
-
-    // 앱 초기화
-    (async function initApp() {
-      await initIndexedDB();
-      
-      const autoLoginInfo = checkAutoLogin();
-      if (autoLoginInfo) {
-        console.log('자동 로그인 실행:', autoLoginInfo.type);
-        
-        if (autoLoginInfo.type === 'student') {
-          // 학생 자동 로그인
-          state.loading = true;
-          render();
-          
-          try {
-            const p = state.phone.replace(/[^0-9]/g, '');
-            const id = `${state.studentName.trim()}_${p}`;
-            state.uid = id;
-            
-            await loadData(id);
-            
-            // 퇴원생 체크
-            const studentData = state.allStudentData[state.studentName];
-            if (studentData && studentData.status === 'withdrawn') {
-              state.loading = false;
-              alert('퇴원 처리된 학생은 로그인할 수 없습니다.\n담당 선생님께 문의해주세요.');
-              logout();
-              return;
-            }
-            
-            state.isLoggedIn = true;
-            state.userType = 'student';
-            state.loading = false;
-            render();
-          } catch (error) {
-            console.error('학생 자동 로그인 오류:', error);
-            state.loading = false;
-            alert('자동 로그인 중 오류가 발생했습니다.');
-            logout();
-          }
-        } else if (autoLoginInfo.type === 'admin') {
-          // 관리자 자동 로그인
-          state.loading = true;
-          render();
-          
-          try {
-            await loadAdminStudents(autoLoginInfo.name);
-            state.isLoggedIn = true;
-            state.userType = 'admin';
-            state.loading = false;
-            render();
-          } catch (error) {
-            console.error('관리자 자동 로그인 오류:', error);
-            state.loading = false;
-            alert('자동 로그인 중 오류가 발생했습니다.');
-            logout();
-          }
-        }
-      } else {
-        render();
-      }
-      
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/service-worker.js')
-          .then(registration => {
-            console.log('Service Worker 등록 성공:', registration.scope);
-          })
-          .catch(error => {
-            console.log('Service Worker 등록 실패:', error);
-          });
-      }
+    // 초기화
+    (async () => {
+      render();
     })();
   </script>
 </body>
