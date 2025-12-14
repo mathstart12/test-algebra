@@ -1235,9 +1235,13 @@
     ];
 
     // Firebase 헬퍼 함수들
+    // NOTE: 기존 OX퀴즈 시스템과 완전히 분리하기 위해 별도의 컬렉션 사용
+    // - auth_teachers: 선생님 계정 (기존 users와 분리)
+    // - auth_students: 학생 정보 (기존 students와 분리)
+    // - auth_progress: 진도 데이터 (기존 데이터와 분리)
     async function teacherLogin(name, key) {
       try {
-        const userDoc = await db.collection('users').doc(name).get();
+        const userDoc = await db.collection('auth_teachers').doc(name).get();
 
         if (!userDoc.exists) {
           throw new Error('등록되지 않은 선생님입니다.');
@@ -1260,8 +1264,8 @@
 
     async function studentLogin(name, password) {
       try {
-        // students 컬렉션에서 name으로 검색
-        const studentsSnapshot = await db.collection('students')
+        // auth_students 컬렉션에서 name으로 검색
+        const studentsSnapshot = await db.collection('auth_students')
           .where('name', '==', name)
           .limit(1)
           .get();
@@ -1289,12 +1293,12 @@
     async function registerTeacher(name, key) {
       try {
         // 이미 존재하는지 확인
-        const userDoc = await db.collection('users').doc(name).get();
+        const userDoc = await db.collection('auth_teachers').doc(name).get();
         if (userDoc.exists) {
           throw new Error('이미 등록된 이름입니다.');
         }
 
-        await db.collection('users').doc(name).set({
+        await db.collection('auth_teachers').doc(name).set({
           role: 'teacher',
           name: name,
           key: key,
@@ -1309,7 +1313,7 @@
 
     async function loadTeacherStudents(teacherName) {
       try {
-        const studentsSnapshot = await db.collection('students')
+        const studentsSnapshot = await db.collection('auth_students')
           .where('createdBy', '==', teacherName)
           .orderBy('createdAt', 'desc')
           .get();
@@ -1327,7 +1331,7 @@
     async function addStudent(teacherName, studentName, password) {
       try {
         // 이름 중복 체크
-        const existingStudent = await db.collection('students')
+        const existingStudent = await db.collection('auth_students')
           .where('name', '==', studentName)
           .limit(1)
           .get();
@@ -1336,7 +1340,7 @@
           throw new Error('이미 등록된 학생 이름입니다.');
         }
 
-        const studentRef = await db.collection('students').add({
+        const studentRef = await db.collection('auth_students').add({
           name: studentName,
           password: password,
           createdBy: teacherName,
@@ -1357,10 +1361,10 @@
     async function deleteStudent(studentId) {
       try {
         // 학생 삭제
-        await db.collection('students').doc(studentId).delete();
+        await db.collection('auth_students').doc(studentId).delete();
 
         // 해당 학생의 모든 진도 데이터 삭제
-        const progressSnapshot = await db.collection('progress')
+        const progressSnapshot = await db.collection('auth_progress')
           .where('studentId', '==', studentId)
           .get();
 
@@ -1378,7 +1382,7 @@
 
     async function resetStudentPassword(studentId, newPassword) {
       try {
-        await db.collection('students').doc(studentId).update({
+        await db.collection('auth_students').doc(studentId).update({
           password: newPassword,
           passwordResetAt: new Date().toISOString()
         });
@@ -1390,7 +1394,7 @@
 
     async function loadStudentProgress(studentId) {
       try {
-        const progressSnapshot = await db.collection('progress')
+        const progressSnapshot = await db.collection('auth_progress')
           .where('studentId', '==', studentId)
           .get();
 
@@ -1428,7 +1432,7 @@
           updatedAt: new Date().toISOString()
         };
 
-        await db.collection('progress').doc(progressId).set(progressData, { merge: true });
+        await db.collection('auth_progress').doc(progressId).set(progressData, { merge: true });
         return true;
       } catch (error) {
         console.error('진도 저장 오류:', error);
