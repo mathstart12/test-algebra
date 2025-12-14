@@ -4315,20 +4315,22 @@
               <button id="prevBtn" class="flex items-center px-5 py-3 bg-gray-800 hover:bg-gray-700 disabled:bg-gray-800/30 disabled:cursor-not-allowed rounded-xl font-bold transition-all border border-gray-700 disabled:border-gray-800 text-white disabled:text-gray-600 text-sm transform hover:scale-105 active:scale-95 disabled:scale-100" ${state.currentQuestion === 0 ? 'disabled' : ''}>
                 ${icon('chevronLeft', 'mr-1', 18)}이전
               </button>
-              
-              ${state.currentQuestion < theme.questions.length - 1 ? `
-                <button id="nextBtn" class="flex-1 flex items-center justify-center px-5 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-xl font-bold transition-all text-white text-sm shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transform hover:scale-105 active:scale-95">
-                  다음${icon('chevronRight', 'ml-1', 18)}
-                </button>
-              ` : `
-                <button id="finishBtn" class="flex-1 px-5 py-3 rounded-xl font-bold transition-all text-sm transform ${
-                  isComplete
-                    ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/30 hover:scale-105 active:scale-95'
-                    : 'bg-gray-800/30 cursor-not-allowed border border-gray-700 text-gray-600 scale-100'
-                }" ${!isComplete ? 'disabled' : ''}>
-                  ${isComplete ? `결과 저장 (${answeredCount}/${theme.questions.length}문제)` : '최소 1문제 이상 풀어주세요'}
-                </button>
-              `}
+
+              <button id="nextBtn" class="flex items-center justify-center px-5 py-3 rounded-xl font-bold transition-all text-sm transform ${
+                state.currentQuestion < questions.length - 1
+                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105 active:scale-95'
+                  : 'bg-gray-800/30 cursor-not-allowed border border-gray-700 text-gray-600 scale-100'
+              }" ${state.currentQuestion >= questions.length - 1 ? 'disabled' : ''}>
+                다음${icon('chevronRight', 'ml-1', 18)}
+              </button>
+
+              <button id="finishBtn" class="flex-1 px-5 py-3 rounded-xl font-bold transition-all text-sm transform ${
+                isComplete
+                  ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/30 hover:scale-105 active:scale-95'
+                  : 'bg-gray-800/30 cursor-not-allowed border border-gray-700 text-gray-600 scale-100'
+              }" ${!isComplete ? 'disabled' : ''}>
+                ${isComplete ? `결과 저장하고 완료 (${answeredCount}/${questions.length})` : '최소 1문제 이상 풀어주세요'}
+              </button>
             </div>
 
             ${isComplete ? `
@@ -4379,29 +4381,36 @@
         render();
       });
 
-      if (state.currentQuestion > 0) {
-        document.getElementById('prevBtn').addEventListener('click', handlePrev);
+      // 이전 버튼 이벤트
+      const prevBtn = document.getElementById('prevBtn');
+      if (prevBtn) {
+        prevBtn.addEventListener('click', handlePrev);
       }
 
-      if (state.currentQuestion < questions.length - 1) {
-        document.getElementById('nextBtn').addEventListener('click', handleNext);
-      } else {
-        const finishBtn = document.getElementById('finishBtn');
-        if (finishBtn && isComplete) {
-          finishBtn.addEventListener('click', async () => {
-            console.log('완료 버튼 클릭됨');
-            finishBtn.disabled = true;
-            finishBtn.textContent = '저장 중...';
-            try {
-              await handleFinishQuiz();
-            } catch (error) {
-              console.error('완료 처리 오류:', error);
-              alert('오류 발생: ' + error.message);
-              finishBtn.disabled = false;
-              finishBtn.textContent = '결과 저장하고 완료';
-            }
-          });
-        }
+      // 다음 버튼 이벤트
+      const nextBtn = document.getElementById('nextBtn');
+      if (nextBtn) {
+        nextBtn.addEventListener('click', handleNext);
+      }
+
+      // 완료 버튼 이벤트 (항상 등록, disabled 속성이 클릭 방지)
+      const finishBtn = document.getElementById('finishBtn');
+      if (finishBtn) {
+        finishBtn.addEventListener('click', async () => {
+          if (!isComplete) return; // 추가 안전장치
+
+          console.log('완료 버튼 클릭됨');
+          finishBtn.disabled = true;
+          finishBtn.textContent = '저장 중...';
+          try {
+            await handleFinishQuiz();
+          } catch (error) {
+            console.error('완료 처리 오류:', error);
+            alert('오류 발생: ' + error.message);
+            finishBtn.disabled = false;
+            finishBtn.textContent = '결과 저장하고 완료';
+          }
+        });
       }
 
       if (!answer) {
@@ -4642,12 +4651,12 @@
                             </div>
                           ` : ''}
 
-                          <!-- 상세 문제별 기록 (필기 및 선생님 메모) -->
+                          <!-- 상세 문제별 기록 (필기 및 선생님 메모) - 항상 표시 -->
                           ${(() => {
-                            const hasHandwriting = lastAttempt.answers && Object.values(lastAttempt.answers).some(a => a.imageUrl);
-                            const hasTeacherNotes = lastAttempt.teacherNotes && Object.keys(lastAttempt.teacherNotes).length > 0;
+                            // 응답한 문제들만 표시
+                            const answeredQuestions = lastAttempt.answeredQuestions || Object.keys(lastAttempt.answers || {}).map(Number);
 
-                            if (!hasHandwriting && !hasTeacherNotes) return '';
+                            if (answeredQuestions.length === 0) return '';
 
                             return `
                               <div class="mt-4 bg-gray-800/30 border border-gray-700 rounded-xl p-4">
@@ -4655,21 +4664,29 @@
                                   ${icon('fileText', 'mr-2', 18)}문제별 상세 기록
                                 </h4>
                                 <div class="space-y-4">
-                                  ${theme.questions.map((q, idx) => {
+                                  ${answeredQuestions.map(idx => {
+                                    const q = theme.questions[idx];
                                     const answer = lastAttempt.answers?.[idx];
                                     const teacherNote = lastAttempt.teacherNotes?.[idx];
 
-                                    if (!answer?.imageUrl && !teacherNote) return '';
+                                    if (!q) return '';
 
                                     return `
                                       <div class="bg-gray-900/50 rounded-lg p-3 border border-gray-700">
-                                        <p class="text-sm text-gray-300 font-medium mb-2">문제 ${idx + 1}</p>
+                                        <div class="flex items-center justify-between mb-2">
+                                          <p class="text-sm text-gray-300 font-medium">문제 ${idx + 1}</p>
+                                          ${answer ? `
+                                            <span class="text-xs font-bold ${answer.correct ? 'text-green-400' : 'text-red-400'}">
+                                              ${answer.correct ? '✓ 정답' : '✗ 오답'}
+                                            </span>
+                                          ` : ''}
+                                        </div>
                                         <p class="text-xs text-gray-400 mb-3 leading-relaxed">${q.question}</p>
 
                                         ${answer?.imageUrl ? `
                                           <div class="mb-3">
                                             <p class="text-xs text-blue-400 font-semibold mb-2">✏️ 필기 내용:</p>
-                                            <img src="${answer.imageUrl}" alt="필기 ${idx + 1}" class="w-full rounded-lg border border-gray-700" />
+                                            <img src="${answer.imageUrl}" alt="필기 ${idx + 1}" class="w-full rounded-lg border border-gray-700" onerror="this.style.display='none';this.previousElementSibling.textContent='필기 내용을 불러올 수 없습니다.'" />
                                           </div>
                                         ` : ''}
 
