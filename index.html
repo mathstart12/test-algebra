@@ -1851,26 +1851,116 @@
         ],
         chapters: [
           { id: 1, name: "Part1. 합의 기호 시그마", questions: [
-            { question: "Q1. 다음 첫째의 합을 시그마로 표현하시오.<br><br>(1) \\(a_5 + a_6 + a_7 + \\cdots + a_{n-3}\\)<br><br>(2) \\(25 + 28 + 31 + \\cdots + 52\\)", answer: "", hint: "", explanation: "" },
-            { question: "Q2. 다음 시그마 기호를 첫째의 합으로 표현하고 계산도 해보시오.<br><br>(1) \\(\\displaystyle\\sum_{k=1}^{4} 2^{k-1}\\)<br><br>(2) \\(\\displaystyle\\sum_{j=1}^{3} 7\\)", answer: "", hint: "", explanation: "" },
-            { question: "Q3. 등식 \\(\\displaystyle\\sum_{m=1}^{10} \\frac{1}{m} = a + \\displaystyle\\sum_{i=1}^{10} \\frac{1}{i+1}\\)을 만족시키는 \\(a\\)의 값은?", answer: "", hint: "", explanation: "" },
-            { question: "Q4. 수열 \\(a_n\\)에 대하여 \\(\\displaystyle\\sum_{k=1}^{n} (a_{3k-2} + a_{3k-1} + a_{3k}) = n^2\\)이 성립할 때,<br>\\(\\displaystyle\\sum_{k=16}^{20} a_k\\)를 구하시오.", answer: "", hint: "", explanation: "" },
-            { question: "Q5. 다음 시그마 식에서 변수와 상수를 구분한 뒤, 합으로 표현해보시<br>오.<br><br>\\(\\displaystyle\\sum_{k=1}^{n} nk^2\\)", answer: "", hint: "", explanation: "" },
-            { question: "Q6. 다음을 계산하시오.<br><br>(1) \\(\\displaystyle\\sum_{j=3}^{12} (3j+1)\\)<br><br>(2) \\(\\displaystyle\\sum_{m=1}^{13} (2m-1)\\)", answer: "", hint: "", explanation: "" },
-            { question: "Q7. 첫째항이 \\(50\\), 공차가 \\(-4\\)인 등차수열 \\(a_n\\)에 대하여<br>\\(\\displaystyle\\sum_{k=1}^{25} |a_k|\\)의 값을 구하시오.", answer: "", hint: "", explanation: "" },
-            { question: "Q8. 다음을 계산하시오.<br><br>(1) \\(\\displaystyle\\sum_{k=5}^{n-2} 2^{2k-1}\\)<br><br>(2) \\(\\displaystyle\\sum_{k=0}^{n} 3^k\\)", answer: "", hint: "", explanation: "" },
-            { question: "Q9. 두 수열 \\(a_n\\), \\(b_n\\)이 모든 자연수 \\(n\\)에 대하여 \\(a_n + b_n = 5\\)를 만족한다.<br>\\(\\displaystyle\\sum_{k=1}^{5} (a_k + 3b_k) = 75\\)일 때, \\(\\displaystyle\\sum_{k=1}^{5} b_k\\) 값을 구하시오.", answer: "", hint: "", explanation: "" },
-            { question: "Q10. 수열 \\(a_n\\)에 대하여 \\(a_1 = 12\\), \\(a_{15} = 48\\)일 때,<br>\\(\\displaystyle\\sum_{k=1}^{14} a_{k+1} - \\displaystyle\\sum_{k=2}^{15} a_{k-1}\\)의 값을 구하시오.", answer: "", hint: "", explanation: "" },
-            { question: "Q11. \\(\\displaystyle\\sum_{k=1}^{9} (k+1)^3 - \\displaystyle\\sum_{k=1}^{10} (k-1)^3\\)을 계산하시오.", answer: "", hint: "", explanation: "" }
+            { question: "Q1. 다음 첫째의 합을 시그마로 표현하시오.<br><br>(1) \\(a_5 + a_6 + a_7 + \\cdots + a_{n-3}\\)<br><br>(2) \\(25 + 28 + 31 + \\cdots + 52\\)", answer: "", hint: "", explanation: "",
+              similarQuestions: [
+                { question: "다음 첫째의 합을 시그마로 표현하시오.<br><br>(1) \\(b_3 + b_4 + b_5 + \\cdots + b_{n-1}\\)<br><br>(2) \\(12 + 15 + 18 + \\cdots + 45\\)", answer: "", hint: "", explanation: "" },
+                { question: "다음 첫째의 합을 시그마로 표현하시오.<br><br>(1) \\(c_1 + c_2 + c_3 + \\cdots + c_{2n}\\)<br><br>(2) \\(7 + 11 + 15 + \\cdots + 63\\)", answer: "", hint: "", explanation: "" }
+              ]
+            },
+            { question: "Q2. 다음 시그마 기호를 첫째의 합으로 표현하고 계산도 해보시오.<br><br>(1) \\(\\displaystyle\\sum_{k=1}^{4} 2^{k-1}\\)<br><br>(2) \\(\\displaystyle\\sum_{j=1}^{3} 7\\)", answer: "", hint: "", explanation: "",
+              similarQuestions: [
+                { question: "다음 시그마 기호를 첫째의 합으로 표현하고 계산도 해보시오.<br><br>(1) \\(\\displaystyle\\sum_{k=1}^{5} 3^{k-1}\\)<br><br>(2) \\(\\displaystyle\\sum_{j=1}^{4} 5\\)", answer: "", hint: "", explanation: "" },
+                { question: "다음 시그마 기호를 첫째의 합으로 표현하고 계산도 해보시오.<br><br>(1) \\(\\displaystyle\\sum_{i=2}^{6} 2^i\\)<br><br>(2) \\(\\displaystyle\\sum_{k=1}^{n} c\\) (단, \\(c\\)는 상수)", answer: "", hint: "", explanation: "" }
+              ]
+            },
+            { question: "Q3. 등식 \\(\\displaystyle\\sum_{m=1}^{10} \\frac{1}{m} = a + \\displaystyle\\sum_{i=1}^{10} \\frac{1}{i+1}\\)을 만족시키는 \\(a\\)의 값은?", answer: "", hint: "", explanation: "",
+              similarQuestions: [
+                { question: "등식 \\(\\displaystyle\\sum_{k=1}^{8} \\frac{1}{k} = b + \\displaystyle\\sum_{i=1}^{8} \\frac{1}{i+1}\\)을 만족시키는 \\(b\\)의 값은?", answer: "", hint: "", explanation: "" },
+                { question: "등식 \\(\\displaystyle\\sum_{j=1}^{n} j = \\displaystyle\\sum_{k=2}^{n+1} k + c\\)를 만족시키는 \\(c\\)의 값을 구하시오.", answer: "", hint: "", explanation: "" }
+              ]
+            },
+            { question: "Q4. 수열 \\(a_n\\)에 대하여 \\(\\displaystyle\\sum_{k=1}^{n} (a_{3k-2} + a_{3k-1} + a_{3k}) = n^2\\)이 성립할 때,<br>\\(\\displaystyle\\sum_{k=16}^{20} a_k\\)를 구하시오.", answer: "", hint: "", explanation: "",
+              similarQuestions: [
+                { question: "수열 \\(b_n\\)에 대하여 \\(\\displaystyle\\sum_{k=1}^{n} (b_{2k-1} + b_{2k}) = 3n^2\\)이 성립할 때, \\(\\displaystyle\\sum_{k=11}^{15} b_k\\)를 구하시오.", answer: "", hint: "", explanation: "" },
+                { question: "수열 \\(c_n\\)에 대하여 \\(\\displaystyle\\sum_{k=1}^{n} (c_{4k-3} + c_{4k-2} + c_{4k-1} + c_{4k}) = 2n^2 + n\\)일 때, \\(\\displaystyle\\sum_{k=21}^{24} c_k\\)를 구하시오.", answer: "", hint: "", explanation: "" }
+              ]
+            },
+            { question: "Q5. 다음 시그마 식에서 변수와 상수를 구분한 뒤, 합으로 표현해보시<br>오.<br><br>\\(\\displaystyle\\sum_{k=1}^{n} nk^2\\)", answer: "", hint: "", explanation: "",
+              similarQuestions: [
+                { question: "다음 시그마 식에서 변수와 상수를 구분한 뒤, 합으로 표현해보시오.<br><br>\\(\\displaystyle\\sum_{i=1}^{m} mk^3\\)", answer: "", hint: "", explanation: "" },
+                { question: "다음 시그마 식에서 변수와 상수를 구분한 뒤, 합으로 표현해보시오.<br><br>\\(\\displaystyle\\sum_{j=1}^{n} (aj + b)\\) (단, \\(a, b\\)는 상수)", answer: "", hint: "", explanation: "" }
+              ]
+            },
+            { question: "Q6. 다음을 계산하시오.<br><br>(1) \\(\\displaystyle\\sum_{j=3}^{12} (3j+1)\\)<br><br>(2) \\(\\displaystyle\\sum_{m=1}^{13} (2m-1)\\)", answer: "", hint: "", explanation: "",
+              similarQuestions: [
+                { question: "다음을 계산하시오.<br><br>(1) \\(\\displaystyle\\sum_{k=2}^{10} (2k+3)\\)<br><br>(2) \\(\\displaystyle\\sum_{i=1}^{15} (3i-2)\\)", answer: "", hint: "", explanation: "" },
+                { question: "다음을 계산하시오.<br><br>(1) \\(\\displaystyle\\sum_{j=5}^{15} (4j-1)\\)<br><br>(2) \\(\\displaystyle\\sum_{m=1}^{20} (5m+3)\\)", answer: "", hint: "", explanation: "" }
+              ]
+            },
+            { question: "Q7. 첫째항이 \\(50\\), 공차가 \\(-4\\)인 등차수열 \\(a_n\\)에 대하여<br>\\(\\displaystyle\\sum_{k=1}^{25} |a_k|\\)의 값을 구하시오.", answer: "", hint: "", explanation: "",
+              similarQuestions: [
+                { question: "첫째항이 \\(40\\), 공차가 \\(-3\\)인 등차수열 \\(b_n\\)에 대하여 \\(\\displaystyle\\sum_{k=1}^{20} |b_k|\\)의 값을 구하시오.", answer: "", hint: "", explanation: "" },
+                { question: "첫째항이 \\(60\\), 공차가 \\(-5\\)인 등차수열 \\(c_n\\)에 대하여 \\(\\displaystyle\\sum_{k=1}^{30} |c_k|\\)의 값을 구하시오.", answer: "", hint: "", explanation: "" }
+              ]
+            },
+            { question: "Q8. 다음을 계산하시오.<br><br>(1) \\(\\displaystyle\\sum_{k=5}^{n-2} 2^{2k-1}\\)<br><br>(2) \\(\\displaystyle\\sum_{k=0}^{n} 3^k\\)", answer: "", hint: "", explanation: "",
+              similarQuestions: [
+                { question: "다음을 계산하시오.<br><br>(1) \\(\\displaystyle\\sum_{k=3}^{n-1} 3^{2k}\\)<br><br>(2) \\(\\displaystyle\\sum_{k=1}^{n} 2^k\\)", answer: "", hint: "", explanation: "" },
+                { question: "다음을 계산하시오.<br><br>(1) \\(\\displaystyle\\sum_{j=2}^{n} 2^{j+1}\\)<br><br>(2) \\(\\displaystyle\\sum_{i=0}^{n-1} 5^i\\)", answer: "", hint: "", explanation: "" }
+              ]
+            },
+            { question: "Q9. 두 수열 \\(a_n\\), \\(b_n\\)이 모든 자연수 \\(n\\)에 대하여 \\(a_n + b_n = 5\\)를 만족한다.<br>\\(\\displaystyle\\sum_{k=1}^{5} (a_k + 3b_k) = 75\\)일 때, \\(\\displaystyle\\sum_{k=1}^{5} b_k\\) 값을 구하시오.", answer: "", hint: "", explanation: "",
+              similarQuestions: [
+                { question: "두 수열 \\(c_n\\), \\(d_n\\)이 모든 자연수 \\(n\\)에 대하여 \\(c_n + d_n = 7\\)을 만족한다. \\(\\displaystyle\\sum_{k=1}^{6} (c_k + 2d_k) = 84\\)일 때, \\(\\displaystyle\\sum_{k=1}^{6} d_k\\) 값을 구하시오.", answer: "", hint: "", explanation: "" },
+                { question: "두 수열 \\(p_n\\), \\(q_n\\)이 모든 자연수 \\(n\\)에 대하여 \\(2p_n + q_n = 10\\)을 만족한다. \\(\\displaystyle\\sum_{k=1}^{4} (p_k + q_k) = 40\\)일 때, \\(\\displaystyle\\sum_{k=1}^{4} p_k\\) 값을 구하시오.", answer: "", hint: "", explanation: "" }
+              ]
+            },
+            { question: "Q10. 수열 \\(a_n\\)에 대하여 \\(a_1 = 12\\), \\(a_{15} = 48\\)일 때,<br>\\(\\displaystyle\\sum_{k=1}^{14} a_{k+1} - \\displaystyle\\sum_{k=2}^{15} a_{k-1}\\)의 값을 구하시오.", answer: "", hint: "", explanation: "",
+              similarQuestions: [
+                { question: "수열 \\(b_n\\)에 대하여 \\(b_1 = 8\\), \\(b_{12} = 35\\)일 때, \\(\\displaystyle\\sum_{k=1}^{11} b_{k+1} - \\displaystyle\\sum_{k=2}^{12} b_{k-1}\\)의 값을 구하시오.", answer: "", hint: "", explanation: "" },
+                { question: "수열 \\(c_n\\)에 대하여 \\(c_1 = 5\\), \\(c_{20} = 100\\)일 때, \\(\\displaystyle\\sum_{k=1}^{19} c_{k+1} - \\displaystyle\\sum_{k=2}^{20} c_{k-1}\\)의 값을 구하시오.", answer: "", hint: "", explanation: "" }
+              ]
+            },
+            { question: "Q11. \\(\\displaystyle\\sum_{k=1}^{9} (k+1)^3 - \\displaystyle\\sum_{k=1}^{10} (k-1)^3\\)을 계산하시오.", answer: "", hint: "", explanation: "",
+              similarQuestions: [
+                { question: "\\(\\displaystyle\\sum_{k=1}^{8} (k+2)^2 - \\displaystyle\\sum_{k=1}^{10} k^2\\)을 계산하시오.", answer: "", hint: "", explanation: "" },
+                { question: "\\(\\displaystyle\\sum_{j=1}^{12} (j+1)^2 - \\displaystyle\\sum_{j=1}^{11} (j-1)^2\\)을 계산하시오.", answer: "", hint: "", explanation: "" }
+              ]
+            }
           ]},
           { id: 2, name: "Part2. 여러가지 수열의 합", questions: [
-            { question: "Q12. 다음을 계산하시오.<br><br>(1) \\(\\displaystyle\\sum_{k=1}^{10} k(k+2)(k-2)\\)<br><br>(2) \\(\\displaystyle\\sum_{j=1}^{5} \\frac{j^3}{j+2} + \\displaystyle\\sum_{m=1}^{5} \\frac{8}{m+2}\\)", answer: "", hint: "", explanation: "" },
-            { question: "Q13. 다음 수열의 첫째항부터 \\(n\\)항까지의 합을 구하여라.<br><br>(1) \\(2, 2+4, 2+4+6, 2+4+6+8, \\cdots\\)<br><br>(2) \\(2, 2+6, 2+6+18, 2+6+18+54, \\cdots\\)", answer: "", hint: "", explanation: "" },
-            { question: "Q14. 수열 \\(a_n\\)에 대하여 \\(\\displaystyle\\sum_{k=1}^{n} (a_{2k-1} + a_{2k}) = n^2 + n\\)일 때,<br>\\(a_{13} + a_{14}\\)의 값을 구하시오.", answer: "", hint: "", explanation: "" },
-            { question: "Q15. \\(\\displaystyle\\sum_{k=1}^{n} a_k = 2^n - 1\\)일 때, \\(\\displaystyle\\sum_{k=1}^{10} a_{2k}\\)의 값을 구하시오.", answer: "", hint: "", explanation: "" },
-            { question: "Q16. 다음을 계산하시오.<br><br>\\(\\frac{1}{2} + \\frac{1}{2+4} + \\frac{1}{2+4+6} + \\frac{1}{2+4+6+8} + \\cdots + \\frac{1}{2+4+6+\\cdots+2n}\\)", answer: "", hint: "", explanation: "" },
-            { question: "Q17. 수열 \\(a_n\\)의 일반항이 \\(a_n = \\log_3 \\frac{n}{n+1}\\)일 때,<br>\\(\\displaystyle\\sum_{k=1}^{n} a_k = 5\\)를 만족시키는 자연수 \\(n\\)의 값은?", answer: "", hint: "", explanation: "" },
-            { question: "Q18. 다음을 계산하시오.<br><br>(1) \\(\\displaystyle\\sum_{k=1}^{80} \\frac{1}{\\sqrt{k} + \\sqrt{k+1}}\\)<br><br>(2) \\(\\displaystyle\\sum_{m=1}^{10} \\left\\{\\displaystyle\\sum_{k=1}^{5} (m+2k)\\right\\}\\)", answer: "", hint: "", explanation: "" }
+            { question: "Q12. 다음을 계산하시오.<br><br>(1) \\(\\displaystyle\\sum_{k=1}^{10} k(k+2)(k-2)\\)<br><br>(2) \\(\\displaystyle\\sum_{j=1}^{5} \\frac{j^3}{j+2} + \\displaystyle\\sum_{m=1}^{5} \\frac{8}{m+2}\\)", answer: "", hint: "", explanation: "",
+              similarQuestions: [
+                { question: "다음을 계산하시오.<br><br>(1) \\(\\displaystyle\\sum_{k=1}^{8} k(k+1)(k-1)\\)<br><br>(2) \\(\\displaystyle\\sum_{j=1}^{6} \\frac{j^2}{j+1} + \\displaystyle\\sum_{m=1}^{6} \\frac{6}{m+1}\\)", answer: "", hint: "", explanation: "" },
+                { question: "다음을 계산하시오.<br><br>(1) \\(\\displaystyle\\sum_{i=1}^{12} i(i+3)(i-3)\\)<br><br>(2) \\(\\displaystyle\\sum_{k=1}^{7} \\frac{k^3}{k+3} + \\displaystyle\\sum_{j=1}^{7} \\frac{12}{j+3}\\)", answer: "", hint: "", explanation: "" }
+              ]
+            },
+            { question: "Q13. 다음 수열의 첫째항부터 \\(n\\)항까지의 합을 구하여라.<br><br>(1) \\(2, 2+4, 2+4+6, 2+4+6+8, \\cdots\\)<br><br>(2) \\(2, 2+6, 2+6+18, 2+6+18+54, \\cdots\\)", answer: "", hint: "", explanation: "",
+              similarQuestions: [
+                { question: "다음 수열의 첫째항부터 \\(n\\)항까지의 합을 구하여라.<br><br>(1) \\(3, 3+6, 3+6+9, 3+6+9+12, \\cdots\\)<br><br>(2) \\(3, 3+9, 3+9+27, 3+9+27+81, \\cdots\\)", answer: "", hint: "", explanation: "" },
+                { question: "다음 수열의 첫째항부터 \\(n\\)항까지의 합을 구하여라.<br><br>(1) \\(5, 5+10, 5+10+15, 5+10+15+20, \\cdots\\)<br><br>(2) \\(1, 1+4, 1+4+16, 1+4+16+64, \\cdots\\)", answer: "", hint: "", explanation: "" }
+              ]
+            },
+            { question: "Q14. 수열 \\(a_n\\)에 대하여 \\(\\displaystyle\\sum_{k=1}^{n} (a_{2k-1} + a_{2k}) = n^2 + n\\)일 때,<br>\\(a_{13} + a_{14}\\)의 값을 구하시오.", answer: "", hint: "", explanation: "",
+              similarQuestions: [
+                { question: "수열 \\(b_n\\)에 대하여 \\(\\displaystyle\\sum_{k=1}^{n} (b_{2k-1} + b_{2k}) = 2n^2 + 3n\\)일 때, \\(b_{11} + b_{12}\\)의 값을 구하시오.", answer: "", hint: "", explanation: "" },
+                { question: "수열 \\(c_n\\)에 대하여 \\(\\displaystyle\\sum_{k=1}^{n} (c_{2k-1} + c_{2k}) = n^2 + 2n + 1\\)일 때, \\(c_{15} + c_{16}\\)의 값을 구하시오.", answer: "", hint: "", explanation: "" }
+              ]
+            },
+            { question: "Q15. \\(\\displaystyle\\sum_{k=1}^{n} a_k = 2^n - 1\\)일 때, \\(\\displaystyle\\sum_{k=1}^{10} a_{2k}\\)의 값을 구하시오.", answer: "", hint: "", explanation: "",
+              similarQuestions: [
+                { question: "\\(\\displaystyle\\sum_{k=1}^{n} b_k = 3^n - 1\\)일 때, \\(\\displaystyle\\sum_{k=1}^{8} b_{2k}\\)의 값을 구하시오.", answer: "", hint: "", explanation: "" },
+                { question: "\\(\\displaystyle\\sum_{k=1}^{n} c_k = n^2\\)일 때, \\(\\displaystyle\\sum_{k=1}^{12} c_{2k}\\)의 값을 구하시오.", answer: "", hint: "", explanation: "" }
+              ]
+            },
+            { question: "Q16. 다음을 계산하시오.<br><br>\\(\\frac{1}{2} + \\frac{1}{2+4} + \\frac{1}{2+4+6} + \\frac{1}{2+4+6+8} + \\cdots + \\frac{1}{2+4+6+\\cdots+2n}\\)", answer: "", hint: "", explanation: "",
+              similarQuestions: [
+                { question: "다음을 계산하시오.<br><br>\\(\\frac{1}{3} + \\frac{1}{3+6} + \\frac{1}{3+6+9} + \\frac{1}{3+6+9+12} + \\cdots + \\frac{1}{3+6+9+\\cdots+3n}\\)", answer: "", hint: "", explanation: "" },
+                { question: "다음을 계산하시오.<br><br>\\(\\frac{1}{5} + \\frac{1}{5+10} + \\frac{1}{5+10+15} + \\cdots + \\frac{1}{5+10+15+\\cdots+5n}\\)", answer: "", hint: "", explanation: "" }
+              ]
+            },
+            { question: "Q17. 수열 \\(a_n\\)의 일반항이 \\(a_n = \\log_3 \\frac{n}{n+1}\\)일 때,<br>\\(\\displaystyle\\sum_{k=1}^{n} a_k = 5\\)를 만족시키는 자연수 \\(n\\)의 값은?", answer: "", hint: "", explanation: "",
+              similarQuestions: [
+                { question: "수열 \\(b_n\\)의 일반항이 \\(b_n = \\log_2 \\frac{n}{n+1}\\)일 때, \\(\\displaystyle\\sum_{k=1}^{n} b_k = 4\\)를 만족시키는 자연수 \\(n\\)의 값은?", answer: "", hint: "", explanation: "" },
+                { question: "수열 \\(c_n\\)의 일반항이 \\(c_n = \\log_5 \\frac{n+1}{n+2}\\)일 때, \\(\\displaystyle\\sum_{k=1}^{n} c_k = 3\\)를 만족시키는 자연수 \\(n\\)의 값은?", answer: "", hint: "", explanation: "" }
+              ]
+            },
+            { question: "Q18. 다음을 계산하시오.<br><br>(1) \\(\\displaystyle\\sum_{k=1}^{80} \\frac{1}{\\sqrt{k} + \\sqrt{k+1}}\\)<br><br>(2) \\(\\displaystyle\\sum_{m=1}^{10} \\left\\{\\displaystyle\\sum_{k=1}^{5} (m+2k)\\right\\}\\)", answer: "", hint: "", explanation: "",
+              similarQuestions: [
+                { question: "다음을 계산하시오.<br><br>(1) \\(\\displaystyle\\sum_{k=1}^{99} \\frac{1}{\\sqrt{k} + \\sqrt{k+1}}\\)<br><br>(2) \\(\\displaystyle\\sum_{m=1}^{8} \\left\\{\\displaystyle\\sum_{k=1}^{6} (m+3k)\\right\\}\\)", answer: "", hint: "", explanation: "" },
+                { question: "다음을 계산하시오.<br><br>(1) \\(\\displaystyle\\sum_{j=1}^{120} \\frac{1}{\\sqrt{j+1} + \\sqrt{j}}\\)<br><br>(2) \\(\\displaystyle\\sum_{i=1}^{12} \\left\\{\\displaystyle\\sum_{j=1}^{4} (2i+j)\\right\\}\\)", answer: "", hint: "", explanation: "" }
+              ]
+            }
           ]}
         ]
       },
