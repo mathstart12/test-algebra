@@ -1153,7 +1153,7 @@
       render();
     }
 
-    function handleAnswer(selectedAnswer) {
+    async function handleAnswer(selectedAnswer) {
       const key = state.currentQuestion;
       if (state.answers[key]) return;
 
@@ -1165,7 +1165,27 @@
       const status = getThemeStatus(state.selectedCategory, state.currentTheme);
       const isRetake = status.attemptCount >= 1;
 
-      state.answers[key] = { selected: selectedAnswer, correct: isCorrect, isRetake };
+      // Canvas 이미지 업로드 (있는 경우)
+      let imageUrl = null;
+      if (state.currentCanvas) {
+        try {
+          imageUrl = await uploadCanvasImage(
+            state.currentCanvas,
+            state.studentId,
+            state.currentQuestion
+          );
+        } catch (error) {
+          console.error('Canvas 이미지 업로드 실패:', error);
+          // 이미지 업로드 실패해도 답변은 저장
+        }
+      }
+
+      state.answers[key] = {
+        selected: selectedAnswer,
+        correct: isCorrect,
+        isRetake,
+        imageUrl
+      };
       render();
     }
 
@@ -2276,7 +2296,60 @@
                 </span>
                 <p class="text-lg leading-relaxed text-white font-medium">${question.question}</p>
               </div>
-              
+
+              <!-- Canvas 필기 영역 -->
+              <div class="mb-6">
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="text-white font-semibold text-sm flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                    </svg>
+                    필기 영역
+                  </h3>
+                  <button
+                    onclick="clearCanvas()"
+                    class="text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 px-2 py-1 rounded-lg transition-all"
+                  >
+                    지우기
+                  </button>
+                </div>
+
+                <canvas
+                  id="drawingCanvas"
+                  class="w-full bg-white rounded-xl mb-3 touch-none"
+                  style="height: 250px; border: 2px solid #374151;"
+                ></canvas>
+
+                <div class="flex items-center gap-3 bg-gray-800/50 p-2 rounded-lg">
+                  <div class="flex items-center gap-2">
+                    <span class="text-gray-400 text-xs">색상:</span>
+                    <div class="flex gap-1">
+                      ${['#000000', '#FF0000', '#0000FF', '#00AA00', '#FF6B00'].map(color => `
+                        <button
+                          onclick="changePenColor('${color}')"
+                          class="w-6 h-6 rounded-full border-2 ${state.penColor === color ? 'border-orange-400 ring-2 ring-orange-400/50' : 'border-gray-600'} transition-all"
+                          style="background-color: ${color};"
+                        ></button>
+                      `).join('')}
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-2">
+                    <span class="text-gray-400 text-xs">굵기:</span>
+                    <div class="flex gap-1">
+                      ${[2, 3, 5, 8].map(size => `
+                        <button
+                          onclick="changePenSize(${size})"
+                          class="w-6 h-6 rounded flex items-center justify-center text-xs ${state.penSize === size ? 'bg-orange-500 text-white' : 'bg-gray-700 text-gray-300'} transition-all"
+                        >
+                          ${size}
+                        </button>
+                      `).join('')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div class="flex gap-3 mb-6">
                 ${['O', 'X'].map(opt => {
                   let btnClass = 'flex-1 py-4 px-6 rounded-xl font-bold text-2xl transition-all transform ';
@@ -2418,6 +2491,11 @@
           });
         });
       }
+
+      // Canvas 초기화
+      setTimeout(() => {
+        initCanvas('drawingCanvas');
+      }, 0);
     }
 
     function renderResultsScreen(app, currentStudentAttempts) {
