@@ -150,7 +150,7 @@
           
           for (const item of pendingItems) {
             try {
-              await db.collection('students').doc(item.uid).set(item.data);
+              await db.collection('oral-test-students').doc(item.uid).set(item.data);
               await deleteFromIndexedDB(item.id);
               console.log('동기화 완료:', item.id);
             } catch (error) {
@@ -905,7 +905,7 @@
     // Firebase 함수
     async function loadData(id) {
       try {
-        const doc = await db.collection('students').doc(id).get();
+        const doc = await db.collection('oral-test-students').doc(id).get();
         if (doc.exists) {
           const studentData = doc.data();
           state.allStudentData[state.studentName] = studentData;
@@ -943,7 +943,7 @@
     async function saveData(newData) {
       try {
         if (navigator.onLine) {
-          await db.collection('students').doc(state.uid).set(newData);
+          await db.collection('oral-test-students').doc(state.uid).set(newData);
           console.log('온라인 저장 완료');
         } else {
           await saveToIndexedDB(newData);
@@ -960,7 +960,7 @@
     // 관리자 함수
     async function loadAdminStudents(teacherName) {
       try {
-        const snapshot = await db.collection('students')
+        const snapshot = await db.collection('oral-test-students')
           .where('teacherName', '==', teacherName)
           .get();
         
@@ -989,7 +989,7 @@
       try {
         const adminId = `admin_${adminName}`;
         // students 컬렉션에 관리자 정보 저장 (isAdmin: true 플래그 추가)
-        await db.collection('students').doc(adminId).set({
+        await db.collection('oral-test-students').doc(adminId).set({
           name: adminName,
           isAdmin: true,
           registeredAt: new Date().toISOString()
@@ -1007,7 +1007,7 @@
     async function checkAdminExists(adminName) {
       try {
         const adminId = `admin_${adminName}`;
-        const doc = await db.collection('students').doc(adminId).get();
+        const doc = await db.collection('oral-test-students').doc(adminId).get();
         return doc.exists && doc.data()?.isAdmin === true;
       } catch (error) {
         console.error('관리자 확인 오류:', error);
@@ -1949,7 +1949,7 @@
         withdrawBtn.addEventListener('click', async () => {
           if (confirm(`${student.studentName} 학생을 퇴원 처리하시겠습니까?\\n\\n퇴원생으로 이동하며, 나중에 재원 처리할 수 있습니다.`)) {
             try {
-              await db.collection('students').doc(student.id).update({
+              await db.collection('oral-test-students').doc(student.id).update({
                 status: 'withdrawn',
                 withdrawnAt: new Date().toISOString()
               });
@@ -1977,7 +1977,7 @@
         reactivateBtn.addEventListener('click', async () => {
           if (confirm(`${student.studentName} 학생을 재원 처리하시겠습니까?\n\n재원생 목록으로 이동합니다.`)) {
             try {
-              await db.collection('students').doc(student.id).update({
+              await db.collection('oral-test-students').doc(student.id).update({
                 status: 'active',
                 reactivatedAt: new Date().toISOString()
               });
