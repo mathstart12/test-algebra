@@ -24,9 +24,13 @@
     }
     .icon { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; }
     
-    /* 수식 렌더링 중에도 화면은 보이도록 */
+    /* 수식 렌더링이 완료될 때까지 숨김 (SSR처럼 보이도록) */
     #app {
-      visibility: visible;
+      opacity: 0;
+      transition: opacity 0.15s ease-in;
+    }
+
+    #app.ready {
       opacity: 1;
     }
     
@@ -2638,20 +2642,42 @@
     let isRenderingMath = false;
     let lastRenderTime = 0;
     let isFirstRender = true;
-    
+
     function renderMath() {
-      // SSR: 수식이 이미 렌더링되어 있음
-      console.log('✓ SSR 모드 - 수식 렌더링 불필요');
-      
-      // 첫 렌더링 시 앱 즉시 표시
-      if (isFirstRender) {
-        const app = document.getElementById('app');
-        if (app && !app.classList.contains('ready')) {
-          app.classList.add('ready');
-          console.log('✓ 앱 표시 (SSR)');
-        }
-        isFirstRender = false;
+      // KaTeX가 로드될 때까지 대기
+      if (typeof renderMathInElement === 'undefined') {
+        // KaTeX가 아직 로드되지 않았다면 잠시 후 다시 시도
+        setTimeout(renderMath, 50);
+        return;
       }
+
+      const app = document.getElementById('app');
+      if (!app) return;
+
+      // KaTeX 렌더링 실행 (화면에 보이기 전에)
+      try {
+        renderMathInElement(app, {
+          delimiters: [
+            {left: '\\(', right: '\\)', display: false},
+            {left: '\\[', right: '\\]', display: true}
+          ],
+          throwOnError: false
+        });
+        console.log('✓ KaTeX 렌더링 완료');
+      } catch (error) {
+        console.error('KaTeX 렌더링 오류:', error);
+      }
+
+      // 렌더링 완료 후 화면 표시 (SSR처럼 보이도록)
+      if (!app.classList.contains('ready')) {
+        // 아주 짧은 지연으로 자연스럽게 표시
+        setTimeout(() => {
+          app.classList.add('ready');
+          console.log('✓ 앱 표시 (수식 렌더링 완료)');
+        }, 10);
+      }
+
+      isFirstRender = false;
     }
 
     function renderLogin(app) {
