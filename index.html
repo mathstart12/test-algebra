@@ -2005,6 +2005,8 @@
       currentCanvas: null,
       penColor: '#000000',
       penSize: 3,
+      canvasStrokes: [], // 획 기록: [{points: [{x, y}, ...], color, width}]
+      isEraserMode: false, // 지우개 모드 여부
       // 퀴즈 진행 관련
       quizStartTime: null, // 퀴즈 시작 시간
       teacherNotes: {} // 선생님 메모 { themeId: { questionIndex: "메모 내용" } }
@@ -2042,7 +2044,7 @@
 
       const ctx = canvas.getContext('2d');
       let isDrawing = false;
-      let lastX = 0, lastY = 0;
+      let currentStroke = null; // 현재 그리고 있는 획
 
       function getCoordinates(e) {
         const rect = canvas.getBoundingClientRect();
@@ -2054,30 +2056,55 @@
 
       function startDrawing(e) {
         e.preventDefault();
-        isDrawing = true;
         const coords = getCoordinates(e);
-        lastX = coords.x;
-        lastY = coords.y;
+
+        // 지우개 모드: 클릭한 위치의 획 찾아서 삭제
+        if (state.isEraserMode) {
+          const strokeIndex = findStrokeAtPoint(coords.x, coords.y);
+          if (strokeIndex !== -1) {
+            state.canvasStrokes.splice(strokeIndex, 1);
+            redrawCanvas();
+          }
+          return;
+        }
+
+        // 그리기 모드: 새 획 시작
+        isDrawing = true;
+        currentStroke = {
+          points: [{x: coords.x, y: coords.y}],
+          color: state.penColor,
+          width: state.penSize
+        };
       }
 
       function draw(e) {
-        if (!isDrawing) return;
+        if (!isDrawing || state.isEraserMode) return;
         e.preventDefault();
         const coords = getCoordinates(e);
-        ctx.strokeStyle = state.penColor;
-        ctx.lineWidth = state.penSize;
+
+        // 현재 획에 점 추가
+        currentStroke.points.push({x: coords.x, y: coords.y});
+
+        // 즉시 화면에 그리기 (미리보기)
+        const lastPoint = currentStroke.points[currentStroke.points.length - 2];
+        ctx.strokeStyle = currentStroke.color;
+        ctx.lineWidth = currentStroke.width;
         ctx.beginPath();
-        ctx.moveTo(lastX, lastY);
+        ctx.moveTo(lastPoint.x, lastPoint.y);
         ctx.lineTo(coords.x, coords.y);
         ctx.stroke();
-        lastX = coords.x;
-        lastY = coords.y;
       }
 
       function stopDrawing(e) {
         if (isDrawing) {
           e.preventDefault();
           isDrawing = false;
+
+          // 완성된 획 저장
+          if (currentStroke && currentStroke.points.length > 0) {
+            state.canvasStrokes.push(currentStroke);
+          }
+          currentStroke = null;
         }
       }
 
@@ -2091,12 +2118,85 @@
       canvas.addEventListener('mouseleave', stopDrawing);
     }
 
+    // 특정 좌표에 있는 획 찾기
+    function findStrokeAtPoint(x, y) {
+      const threshold = 10; // 터치 감지 반경
+
+      // 가장 최근 획부터 역순으로 검색 (위에 있는 획 우선)
+      for (let i = state.canvasStrokes.length - 1; i >= 0; i--) {
+        const stroke = state.canvasStrokes[i];
+
+        // 획의 모든 점과 거리 계산
+        for (let j = 0; j < stroke.points.length; j++) {
+          const point = stroke.points[j];
+          const distance = Math.sqrt(
+            Math.pow(point.x - x, 2) + Math.pow(point.y - y, 2)
+          );
+
+          if (distance <= threshold + stroke.width / 2) {
+            return i; // 획 인덱스 반환
+          }
+        }
+      }
+
+      return -1; // 획을 찾지 못함
+    }
+
+    // 캔버스 전체 다시 그리기
+    function redrawCanvas() {
+      const canvas = state.currentCanvas;
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+
+      // 캔버스 초기화
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // 모든 획 다시 그리기
+      state.canvasStrokes.forEach(stroke => {
+        if (stroke.points.length < 2) return;
+
+        ctx.strokeStyle = stroke.color;
+        ctx.lineWidth = stroke.width;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        ctx.beginPath();
+        ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+
+        for (let i = 1; i < stroke.points.length; i++) {
+          ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+        }
+
+        ctx.stroke();
+      });
+    }
+
     function clearCanvas() {
       const canvas = state.currentCanvas;
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // 모든 획 기록 삭제
+      state.canvasStrokes = [];
+    }
+
+    // 지우개 모드 토글
+    function toggleEraser() {
+      state.isEraserMode = !state.isEraserMode;
+      const eraserBtn = document.getElementById('eraserBtn');
+
+      if (eraserBtn) {
+        if (state.isEraserMode) {
+          eraserBtn.classList.remove('bg-gray-700', 'text-gray-300');
+          eraserBtn.classList.add('bg-blue-600', 'text-white');
+        } else {
+          eraserBtn.classList.remove('bg-blue-600', 'text-white');
+          eraserBtn.classList.add('bg-gray-700', 'text-gray-300');
+        }
+      }
     }
 
     function changePenColor(color) {
@@ -2456,6 +2556,8 @@
       state.currentQuestion = 0;
       state.answers = {};
       state.quizStartTime = Date.now(); // 퀴즈 시작 시간 기록
+      state.canvasStrokes = []; // 캔버스 획 초기화
+      state.isEraserMode = false; // 지우개 모드 해제
       render();
     }
 
@@ -2501,6 +2603,8 @@
       const theme = category.chapters.find(t => t.id === state.currentTheme);
       if (state.currentQuestion < theme.questions.length - 1) {
         state.currentQuestion++;
+        state.canvasStrokes = []; // 다음 문제로 이동 시 캔버스 획 초기화
+        state.isEraserMode = false; // 지우개 모드 해제
         render();
       }
     }
@@ -2508,6 +2612,8 @@
     function handlePrev() {
       if (state.currentQuestion > 0) {
         state.currentQuestion--;
+        state.canvasStrokes = []; // 이전 문제로 이동 시 캔버스 획 초기화
+        state.isEraserMode = false; // 지우개 모드 해제
         render();
       }
     }
@@ -3863,18 +3969,27 @@
                     </svg>
                     필기 영역
                   </h3>
-                  <button
-                    onclick="clearCanvas()"
-                    class="text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 px-2 py-1 rounded-lg transition-all"
-                  >
-                    지우기
-                  </button>
+                  <div class="flex gap-2">
+                    <button
+                      onclick="toggleEraser()"
+                      id="eraserBtn"
+                      class="text-xs px-3 py-1 rounded-lg transition-all bg-gray-700 text-gray-300 hover:bg-gray-600"
+                    >
+                      🧹 지우개
+                    </button>
+                    <button
+                      onclick="clearCanvas()"
+                      class="text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 px-3 py-1 rounded-lg transition-all"
+                    >
+                      전체 지우기
+                    </button>
+                  </div>
                 </div>
 
                 <canvas
                   id="drawingCanvas"
                   class="w-full bg-white rounded-xl mb-3 touch-none"
-                  style="height: 250px; border: 2px solid #374151;"
+                  style="height: 450px; border: 2px solid #374151;"
                 ></canvas>
 
                 <div class="flex items-center gap-3 bg-gray-800/50 p-2 rounded-lg">
