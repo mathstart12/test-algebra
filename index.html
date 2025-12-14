@@ -1285,23 +1285,23 @@
       }
     }
 
-    async function studentLogin(name, password) {
+    async function studentLogin(name, phone) {
       try {
-        // auth_students 컬렉션에서 name으로 검색
-        const studentsSnapshot = await db.collection('auth_students')
-          .where('name', '==', name)
-          .limit(1)
-          .get();
+        // 전화번호로 학생 ID 생성
+        const studentId = 's_' + phone;
 
-        if (studentsSnapshot.empty) {
-          throw new Error('등록되지 않은 학생입니다.');
+        // auth_students 컬렉션에서 조회
+        const studentDoc = await db.collection('auth_students').doc(studentId).get();
+
+        if (!studentDoc.exists) {
+          throw new Error('등록되지 않은 학생입니다. "처음 가입하는 학생입니다" 체크박스를 선택해주세요.');
         }
 
-        const studentDoc = studentsSnapshot.docs[0];
         const studentData = studentDoc.data();
 
-        if (studentData.password !== password) {
-          throw new Error('비밀번호가 일치하지 않습니다.');
+        // 이름 확인
+        if (studentData.name !== name) {
+          throw new Error('이름이 일치하지 않습니다.');
         }
 
         return {
@@ -1710,35 +1710,137 @@
         <div class="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center p-4">
           <div class="w-full max-w-md">
             <div class="bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-700">
-              <h1 class="text-3xl font-bold text-white mb-8 text-center">구두테스트 퀴즈</h1>
+              <!-- 제목 -->
+              <div class="text-center mb-8">
+                <div class="mb-3 flex justify-center">
+                  <div class="w-20 h-20 bg-orange-500 rounded-full flex items-center justify-center">
+                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                  </div>
+                </div>
+                <h1 class="text-3xl font-bold text-white mb-2">구두테스트 퀴즈</h1>
+                <p class="text-xl text-orange-500 font-semibold">공통수학2</p>
+              </div>
 
-              <div class="space-y-4">
+              <!-- 탭 -->
+              <div class="flex mb-6 bg-gray-700 rounded-lg p-1">
                 <button
-                  onclick="showTeacherLogin()"
-                  class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 flex items-center justify-center gap-3"
+                  onclick="switchLoginTab('student')"
+                  id="studentTab"
+                  class="flex-1 py-3 rounded-lg font-semibold transition-all bg-orange-500 text-white"
                 >
-                  ${icon('user', '', 28)}
-                  <span class="text-lg">선생님 로그인</span>
+                  학생
                 </button>
-
                 <button
-                  onclick="showStudentLogin()"
-                  class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 flex items-center justify-center gap-3"
+                  onclick="switchLoginTab('teacher')"
+                  id="teacherTab"
+                  class="flex-1 py-3 rounded-lg font-semibold transition-all bg-transparent text-gray-400"
                 >
-                  ${icon('user', '', 28)}
-                  <span class="text-lg">학생 로그인</span>
+                  선생님
                 </button>
               </div>
 
-              <div class="mt-6 text-center">
-                <button onclick="showRegisterScreen('teacher')" class="text-orange-400 hover:text-orange-300 text-sm">
-                  선생님 회원가입
+              <!-- 학생 로그인 폼 -->
+              <div id="studentForm" class="space-y-4">
+                <div>
+                  <label class="block text-gray-400 text-sm mb-2">학생 이름</label>
+                  <input
+                    type="text"
+                    id="studentName"
+                    class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500"
+                    placeholder="이름을 입력하세요"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-gray-400 text-sm mb-2">전화번호</label>
+                  <input
+                    type="tel"
+                    id="studentPhone"
+                    class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500"
+                    placeholder="전화번호 (- 없이)"
+                  />
+                  <p class="text-xs text-gray-500 mt-1">예: 01012345678</p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <input type="checkbox" id="studentRegister" class="w-4 h-4 text-orange-500 bg-gray-700 border-gray-600 rounded focus:ring-orange-500">
+                  <label for="studentRegister" class="text-sm text-gray-300">처음 가입하는 학생입니다</label>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <input type="checkbox" id="studentAutoLogin" class="w-4 h-4 text-orange-500 bg-gray-700 border-gray-600 rounded focus:ring-orange-500">
+                  <label for="studentAutoLogin" class="text-sm text-gray-300">자동 로그인</label>
+                  <p class="text-xs text-gray-500">다음부터 자동으로 로그인됩니다</p>
+                </div>
+
+                <button
+                  onclick="handleStudentLogin(event)"
+                  class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-6 rounded-xl transition-all text-lg"
+                >
+                  시작하기
                 </button>
+              </div>
+
+              <!-- 선생님 로그인 폼 (숨김) -->
+              <div id="teacherForm" class="space-y-4" style="display: none;">
+                <div>
+                  <label class="block text-gray-400 text-sm mb-2">이름</label>
+                  <input
+                    type="text"
+                    id="teacherName"
+                    class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500"
+                    placeholder="이름을 입력하세요"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-gray-400 text-sm mb-2">비밀번호</label>
+                  <input
+                    type="password"
+                    id="teacherPassword"
+                    class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500"
+                    placeholder="비밀번호를 입력하세요"
+                  />
+                </div>
+
+                <button
+                  onclick="handleTeacherLogin(event)"
+                  class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-6 rounded-xl transition-all text-lg"
+                >
+                  로그인
+                </button>
+
+                <div class="text-center">
+                  <button onclick="showRegisterScreen('teacher')" class="text-orange-400 hover:text-orange-300 text-sm">
+                    계정이 없으신가요? 회원가입
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       `;
+    }
+
+    function switchLoginTab(type) {
+      const studentTab = document.getElementById('studentTab');
+      const teacherTab = document.getElementById('teacherTab');
+      const studentForm = document.getElementById('studentForm');
+      const teacherForm = document.getElementById('teacherForm');
+
+      if (type === 'student') {
+        studentTab.className = 'flex-1 py-3 rounded-lg font-semibold transition-all bg-orange-500 text-white';
+        teacherTab.className = 'flex-1 py-3 rounded-lg font-semibold transition-all bg-transparent text-gray-400';
+        studentForm.style.display = 'block';
+        teacherForm.style.display = 'none';
+      } else {
+        studentTab.className = 'flex-1 py-3 rounded-lg font-semibold transition-all bg-transparent text-gray-400';
+        teacherTab.className = 'flex-1 py-3 rounded-lg font-semibold transition-all bg-orange-500 text-white';
+        studentForm.style.display = 'none';
+        teacherForm.style.display = 'block';
+      }
     }
 
     function renderTeacherLoginForm() {
@@ -2091,12 +2193,12 @@
     }
 
     async function handleTeacherLogin(event) {
-      event.preventDefault();
+      if (event) event.preventDefault();
 
       const name = document.getElementById('teacherName').value.trim();
-      const key = document.getElementById('teacherKey').value;
+      const password = document.getElementById('teacherPassword').value;
 
-      if (!name || !key) {
+      if (!name || !password) {
         alert('이름과 비밀번호를 모두 입력해주세요.');
         return;
       }
@@ -2105,7 +2207,7 @@
       render();
 
       try {
-        await teacherLogin(name, key);
+        await teacherLogin(name, password);
         state.isLoggedIn = true;
         state.userType = 'teacher';
         state.userId = name;
@@ -2125,13 +2227,19 @@
     }
 
     async function handleStudentLogin(event) {
-      event.preventDefault();
+      if (event) event.preventDefault();
 
       const name = document.getElementById('studentName').value.trim();
-      const password = document.getElementById('studentPassword').value;
+      const phone = document.getElementById('studentPhone').value.trim();
+      const isRegister = document.getElementById('studentRegister').checked;
 
-      if (!name || !password) {
-        alert('이름과 비밀번호를 모두 입력해주세요.');
+      if (!name || !phone) {
+        alert('이름과 전화번호를 모두 입력해주세요.');
+        return;
+      }
+
+      if (phone.length < 10) {
+        alert('올바른 전화번호를 입력해주세요.');
         return;
       }
 
@@ -2139,7 +2247,15 @@
       render();
 
       try {
-        const studentData = await studentLogin(name, password);
+        let studentData;
+        if (isRegister) {
+          // 새 학생 등록
+          studentData = await registerStudent(name, phone);
+        } else {
+          // 기존 학생 로그인
+          studentData = await studentLogin(name, phone);
+        }
+
         state.isLoggedIn = true;
         state.userType = 'student';
         state.userId = studentData.id;
@@ -2155,6 +2271,33 @@
         state.loading = false;
         alert(error.message);
         render();
+      }
+    }
+
+    async function registerStudent(name, phone) {
+      try {
+        // 전화번호로 학생 ID 생성 (기존 로직 유지)
+        const studentId = 's_' + phone;
+
+        // 이미 존재하는지 확인
+        const existingDoc = await db.collection('auth_students').doc(studentId).get();
+        if (existingDoc.exists) {
+          throw new Error('이미 등록된 전화번호입니다. 체크박스를 해제하고 로그인하세요.');
+        }
+
+        // 새 학생 등록
+        const studentData = {
+          id: studentId,
+          name: name,
+          phone: phone,
+          password: phone, // 전화번호를 비밀번호로 사용
+          createdAt: new Date().toISOString()
+        };
+
+        await db.collection('auth_students').doc(studentId).set(studentData);
+        return studentData;
+      } catch (error) {
+        throw error;
       }
     }
 
