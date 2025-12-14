@@ -2466,7 +2466,8 @@
       const category = categories.find(c => c.id === state.selectedCategory);
       const theme = category.chapters.find(t => t.id === state.currentTheme);
       const question = theme.questions[state.currentQuestion];
-      const isCorrect = selectedAnswer === question.answer;
+      // O/X는 선생님이 직접 평가하는 버튼 (O = 정답, X = 오답)
+      const isCorrect = selectedAnswer === 'O';
 
       const status = getThemeStatus(state.selectedCategory, state.currentTheme);
       const isRetake = status.attemptCount >= 1;
@@ -2514,14 +2515,19 @@
     async function handleFinishQuiz() {
       const category = categories.find(c => c.id === state.selectedCategory);
       const theme = category.chapters.find(t => t.id === state.currentTheme);
+      const answeredCount = Object.keys(state.answers).length;
       const correct = Object.values(state.answers).filter(a => a.correct).length;
       const total = theme.questions.length;
-      const percentage = Math.round((correct / total) * 100);
+      // 정답률은 응답한 문제 기준으로 계산
+      const percentage = answeredCount > 0 ? Math.round((correct / answeredCount) * 100) : 0;
 
       const wrongQuestions = theme.questions
         .map((q, idx) => ({ ...q, index: idx }))
         .filter(q => state.answers[q.index] && !state.answers[q.index].correct)
         .map(q => q.question);
+
+      // 응답한 문제 번호 목록
+      const answeredQuestions = Object.keys(state.answers).map(Number).sort((a, b) => a - b);
 
       // 총 소요 시간 계산 (밀리초)
       const totalTime = state.quizStartTime ? Date.now() - state.quizStartTime : 0;
@@ -2534,6 +2540,8 @@
         date: new Date().toLocaleString('ko-KR'),
         correct,
         total,
+        answeredCount, // 응답한 문제 수
+        answeredQuestions, // 응답한 문제 번호들
         percentage,
         wrongQuestions,
         answers: { ...state.answers },
@@ -2661,7 +2669,10 @@
             {left: '\\(', right: '\\)', display: false},
             {left: '\\[', right: '\\]', display: true}
           ],
-          throwOnError: false
+          throwOnError: false,
+          ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+          // ≠, >, < 같은 HTML 엔티티는 무시
+          trust: (context) => ['\\htmlId', '\\href'].includes(context.command)
         });
         console.log('✓ KaTeX 렌더링 완료');
       } catch (error) {
@@ -3793,7 +3804,8 @@
       const answeredCount = Object.keys(state.answers).length;
       const correctCount = Object.values(state.answers).filter(a => a.correct).length;
       const incorrectCount = answeredCount - correctCount;
-      const isComplete = answeredCount === theme.questions.length;
+      // 부분 완료 허용 - 최소 1문제만 풀면 저장 가능
+      const isComplete = answeredCount >= 1;
 
       app.innerHTML = `
         <div class="min-h-screen p-6">
@@ -3966,40 +3978,38 @@
               ` : `
                 <button id="finishBtn" class="flex-1 px-5 py-3 rounded-xl font-bold transition-all text-sm transform ${
                   isComplete
-                    ? correctCount === theme.questions.length
-                      ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg shadow-green-500/30 hover:scale-105 active:scale-95'
-                      : 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/30 hover:scale-105 active:scale-95'
+                    ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/30 hover:scale-105 active:scale-95'
                     : 'bg-gray-800/30 cursor-not-allowed border border-gray-700 text-gray-600 scale-100'
                 }" ${!isComplete ? 'disabled' : ''}>
-                  ${isComplete ? '결과 저장하고 완료' : '모든 문제를 풀어주세요'}
+                  ${isComplete ? `결과 저장 (${answeredCount}/${theme.questions.length}문제)` : '최소 1문제 이상 풀어주세요'}
                 </button>
               `}
             </div>
 
             ${isComplete ? `
               <div class="mt-6 border-2 rounded-2xl p-6 shadow-xl ${
-                correctCount === theme.questions.length 
-                  ? 'bg-green-900/20 border-green-500/50' 
+                correctCount === answeredCount
+                  ? 'bg-green-900/20 border-green-500/50'
                   : 'bg-orange-900/20 border-orange-500/50'
               }">
                 <h3 class="text-xl font-bold mb-4 text-center ${
-                  correctCount === theme.questions.length ? 'text-green-400' : 'text-orange-400'
+                  correctCount === answeredCount ? 'text-green-400' : 'text-orange-400'
                 }">
-                  ${correctCount === theme.questions.length ? '🎉 완벽합니다!' : '퀴즈 완료!'}
+                  ${correctCount === answeredCount ? '🎉 완벽합니다!' : '저장 준비 완료!'}
                 </h3>
                 <p class="text-base text-center mb-3 text-white font-medium">
-                  총 ${theme.questions.length}문제 중 <span class="text-green-400 font-bold">${correctCount}문제</span> 맞히셨습니다!
+                  응답한 ${answeredCount}문제 중 <span class="text-green-400 font-bold">${correctCount}문제</span> 맞히셨습니다!
                 </p>
                 <p class="text-sm text-center mb-4 text-gray-300 font-medium">
                   정답률: <span class="font-bold text-lg ${
-                    correctCount === theme.questions.length ? 'text-green-400' : 'text-orange-400'
+                    correctCount === answeredCount ? 'text-green-400' : 'text-orange-400'
                   }">
-                    ${Math.round((correctCount / theme.questions.length) * 100)}%
+                    ${Math.round((correctCount / answeredCount) * 100)}%
                   </span>
                 </p>
-                ${correctCount < theme.questions.length ? `
+                ${answeredCount < theme.questions.length ? `
                   <p class="text-center text-xs text-gray-400 font-medium">
-                    💡 1분 후 재도전 가능. 힌트를 복습하세요!
+                    📝 ${theme.questions.length - answeredCount}개 문제 미응답 (부분 완료로 저장됩니다)
                   </p>
                 ` : ''}
               </div>
@@ -4146,17 +4156,30 @@
                               <div class="text-2xl font-bold ${lastAttempt.percentage === 100 ? 'text-green-400' : 'text-orange-400'}">
                                 ${lastAttempt.percentage}%
                               </div>
-                              <div class="text-xs text-gray-500 font-semibold">${lastAttempt.correct} / ${lastAttempt.total}</div>
+                              <div class="text-xs text-gray-500 font-semibold">
+                                ${lastAttempt.correct} / ${lastAttempt.answeredCount || lastAttempt.total}
+                                ${lastAttempt.answeredCount && lastAttempt.answeredCount < lastAttempt.total ?
+                                  `<span class="text-blue-400"> (${lastAttempt.answeredCount}문제 응답)</span>` : ''}
+                              </div>
                             </div>
                           </div>
-                          
+
+                          ${lastAttempt.answeredQuestions && lastAttempt.answeredCount < lastAttempt.total ? `
+                            <div class="mb-4 px-4 py-2 bg-blue-900/20 border border-blue-500/30 rounded-xl">
+                              <p class="text-xs text-blue-400 font-semibold mb-1">응답한 문제:</p>
+                              <p class="text-xs text-gray-300">
+                                ${lastAttempt.answeredQuestions.map(i => `Q${i+1}`).join(', ')}
+                              </p>
+                            </div>
+                          ` : ''}
+
                           <div class="grid grid-cols-4 gap-4 pt-4 border-t border-gray-800 mb-4">
                             <div class="text-center">
                               <div class="text-lg font-bold text-green-400">${lastAttempt.correct}</div>
                               <div class="text-xs text-gray-500">맞힌 개수</div>
                             </div>
                             <div class="text-center">
-                              <div class="text-lg font-bold text-red-400">${lastAttempt.total - lastAttempt.correct}</div>
+                              <div class="text-lg font-bold text-red-400">${(lastAttempt.answeredCount || lastAttempt.total) - lastAttempt.correct}</div>
                               <div class="text-xs text-gray-500">틀린 개수</div>
                             </div>
                             <div class="text-center">
