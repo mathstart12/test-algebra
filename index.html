@@ -2001,6 +2001,10 @@
       studentStatusFilter: 'active', // 'active' (재원생) 또는 'withdrawn' (퇴원생)
       // 학습 기록 전용
       recordSelectedCategory: null, // 학습 기록에서 선택한 카테고리
+      // 오답테스트 관련
+      isWrongAnswerTest: false, // 오답테스트 모드 여부
+      wrongAnswerQuestions: [], // 오답테스트 문제 목록
+      wrongAnswerAttemptId: null, // 어떤 시도의 오답테스트인지
       // Canvas 관련
       currentCanvas: null,
       penColor: '#000000',
@@ -2281,6 +2285,72 @@
       const minutes = Math.floor(totalSeconds / 60);
       const seconds = totalSeconds % 60;
       return `${minutes}분 ${seconds}초`;
+    }
+
+    // ===== 오답테스트 관련 함수 =====
+    function generateWrongAnswerTest(attempt) {
+      console.log('=== 오답테스트 생성 시작 ===');
+      console.log('Attempt:', attempt);
+
+      const category = categories.find(c => c.id === attempt.categoryId);
+      const theme = category.chapters.find(t => t.id === attempt.themeId);
+
+      const wrongAnswerQuestions = [];
+
+      // 틀린 문제들을 찾아서 유사문제 중 랜덤 1개 선택
+      theme.questions.forEach((question, qIdx) => {
+        const answer = attempt.answers[qIdx];
+        // 틀린 문제만 선택
+        if (answer && !answer.correct) {
+          // similarQuestions가 있으면 랜덤으로 1개 선택
+          if (question.similarQuestions && question.similarQuestions.length > 0) {
+            const randomIndex = Math.floor(Math.random() * question.similarQuestions.length);
+            const selectedSimilarQuestion = question.similarQuestions[randomIndex];
+
+            wrongAnswerQuestions.push({
+              originalQuestion: question.question,
+              originalQuestionIndex: qIdx,
+              question: selectedSimilarQuestion.question,
+              answer: selectedSimilarQuestion.answer || "",
+              hint: selectedSimilarQuestion.hint || "",
+              explanation: selectedSimilarQuestion.explanation || ""
+            });
+          }
+        }
+      });
+
+      console.log('생성된 오답테스트 문제 수:', wrongAnswerQuestions.length);
+      console.log('오답테스트 문제:', wrongAnswerQuestions);
+
+      return wrongAnswerQuestions;
+    }
+
+    function startWrongAnswerTest(attempt) {
+      console.log('=== 오답테스트 시작 ===');
+
+      const wrongQuestions = generateWrongAnswerTest(attempt);
+
+      if (wrongQuestions.length === 0) {
+        alert('틀린 문제가 없거나 유사문제가 없습니다.');
+        return;
+      }
+
+      state.isWrongAnswerTest = true;
+      state.wrongAnswerQuestions = wrongQuestions;
+      state.wrongAnswerAttemptId = attempt.date; // 시도 날짜를 ID로 사용
+      state.selectedCategory = attempt.categoryId;
+      state.currentTheme = attempt.themeId;
+      state.currentQuestion = 0;
+      state.answers = {};
+      state.quizStartTime = Date.now();
+      state.questionTimes = {};
+      state.canvasStrokes = [];
+      state.isEraserMode = false;
+      state.showResults = false;
+      stopQuestionTimer();
+
+      render();
+      setTimeout(() => startQuestionTimer(), 100);
     }
 
     async function uploadCanvasImage(canvas, studentId, questionIndex) {
@@ -2733,13 +2803,18 @@
 
       const category = categories.find(c => c.id === state.selectedCategory);
       const theme = category.chapters.find(t => t.id === state.currentTheme);
+
+      // 오답테스트 모드인지 확인
+      const isWrongTest = state.isWrongAnswerTest;
+      const questions = isWrongTest ? state.wrongAnswerQuestions : theme.questions;
+
       const answeredCount = Object.keys(state.answers).length;
       const correct = Object.values(state.answers).filter(a => a.correct).length;
-      const total = theme.questions.length;
+      const total = questions.length;
       // 정답률은 응답한 문제 기준으로 계산
       const percentage = answeredCount > 0 ? Math.round((correct / answeredCount) * 100) : 0;
 
-      const wrongQuestions = theme.questions
+      const wrongQuestions = questions
         .map((q, idx) => ({ ...q, index: idx }))
         .filter(q => state.answers[q.index] && !state.answers[q.index].correct)
         .map(q => q.question);
@@ -2768,7 +2843,9 @@
         answers: { ...state.answers },
         totalTime, // 총 소요 시간 (밀리초) - 응답한 문제들의 합
         questionTimes: { ...state.questionTimes }, // 각 문제별 소요 시간
-        teacherNotes: state.teacherNotes[state.currentTheme] || {} // 선생님 메모
+        teacherNotes: state.teacherNotes[state.currentTheme] || {}, // 선생님 메모
+        isWrongAnswerTest: isWrongTest, // 오답테스트 여부
+        wrongAnswerAttemptId: isWrongTest ? state.wrongAnswerAttemptId : null // 원본 시도 ID
       };
 
       console.log('저장할 attemptData:', attemptData);
@@ -2820,12 +2897,24 @@
         state.selectedStudent = newData;
       }
 
+      // 오답테스트 완료 후 학습 기록으로 이동
+      if (isWrongTest) {
+        state.isWrongAnswerTest = false;
+        state.wrongAnswerQuestions = [];
+        state.wrongAnswerAttemptId = null;
+        state.showResults = true; // 학습 기록 화면으로
+      }
+
       state.currentTheme = null;
       state.currentQuestion = 0;
       state.answers = {};
       state.quizStartTime = null;
       state.questionTimes = {}; // 문제별 시간 초기화
-      state.selectedCategory = null;
+
+      if (!isWrongTest) {
+        state.selectedCategory = null;
+      }
+
       console.log('=== handleFinishQuiz 완료 ===');
       render();
     }
@@ -4024,14 +4113,19 @@
         app.innerHTML = `<div class="min-h-screen flex items-center justify-center p-6"><p class="text-white">카테고리를 찾을 수 없습니다.</p></div>`;
         return;
       }
-      
+
       const theme = category.chapters.find(t => t.id === state.currentTheme);
       if (!theme || !theme.questions) {
         app.innerHTML = `<div class="min-h-screen flex items-center justify-center p-6"><p class="text-white">테마를 찾을 수 없습니다.</p></div>`;
         return;
       }
-      
-      const question = theme.questions[state.currentQuestion];
+
+      // 오답테스트 모드인지 확인
+      const isWrongTest = state.isWrongAnswerTest;
+      const questions = isWrongTest ? state.wrongAnswerQuestions : theme.questions;
+      const themeName = isWrongTest ? `${theme.name} - 오답테스트` : theme.name;
+
+      const question = questions[state.currentQuestion];
       const answer = state.answers[state.currentQuestion];
       const answeredCount = Object.keys(state.answers).length;
       const correctCount = Object.values(state.answers).filter(a => a.correct).length;
@@ -4044,19 +4138,19 @@
           <div class="max-w-4xl mx-auto">
             <div class="mb-4">
               <button id="backToThemeBtn" class="text-sm text-orange-500 hover:text-orange-400 flex items-center font-semibold">
-                ${icon('chevronLeft', '', 16)}테마 선택으로 돌아가기
+                ${icon('chevronLeft', '', 16)}${isWrongTest ? '학습 기록으로 돌아가기' : '테마 선택으로 돌아가기'}
               </button>
             </div>
 
-            <div class="bg-gray-900 rounded-2xl p-5 mb-6 shadow-xl border border-orange-500/30">
+            <div class="bg-gray-900 rounded-2xl p-5 mb-6 shadow-xl border ${isWrongTest ? 'border-purple-500/30' : 'border-orange-500/30'}">
               <div class="flex items-center justify-between">
                 <div>
                   <h2 class="text-base font-bold text-white">${state.studentName}</h2>
-                  <p class="text-xs text-gray-400 mt-1 font-medium">${theme.name}</p>
+                  <p class="text-xs ${isWrongTest ? 'text-purple-400' : 'text-gray-400'} mt-1 font-medium">${themeName}</p>
                 </div>
                 <div class="text-right">
                   <p class="text-xs text-gray-500 font-semibold">진행 상황</p>
-                  <p class="text-lg font-bold text-orange-400">${state.currentQuestion + 1} / ${theme.questions.length}</p>
+                  <p class="text-lg font-bold ${isWrongTest ? 'text-purple-400' : 'text-orange-400'}">${state.currentQuestion + 1} / ${questions.length}</p>
                 </div>
               </div>
             </div>
@@ -4270,9 +4364,18 @@
       `;
 
       document.getElementById('backToThemeBtn').addEventListener('click', () => {
+        // 오답테스트 모드 종료
+        if (state.isWrongAnswerTest) {
+          state.isWrongAnswerTest = false;
+          state.wrongAnswerQuestions = [];
+          state.wrongAnswerAttemptId = null;
+          state.showResults = true; // 학습 기록으로 돌아가기
+        }
+
         state.currentTheme = null;
         state.currentQuestion = 0;
         state.answers = {};
+        stopQuestionTimer();
         render();
       });
 
@@ -4280,7 +4383,7 @@
         document.getElementById('prevBtn').addEventListener('click', handlePrev);
       }
 
-      if (state.currentQuestion < theme.questions.length - 1) {
+      if (state.currentQuestion < questions.length - 1) {
         document.getElementById('nextBtn').addEventListener('click', handleNext);
       } else {
         const finishBtn = document.getElementById('finishBtn');
@@ -4523,6 +4626,19 @@
                                   </p>
                                 </div>
                               ` : ''}
+
+                              <!-- 오답테스트 버튼 -->
+                              <div class="mt-4">
+                                <button
+                                  class="wrong-answer-test-btn w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-xl font-bold text-white transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-purple-500/30"
+                                  data-attempt-index="${attempts.indexOf(lastAttempt)}"
+                                >
+                                  📝 오답테스트 시작하기
+                                </button>
+                                <p class="text-xs text-gray-500 mt-2 text-center">
+                                  틀린 문제의 유사문제로 구성된 테스트입니다
+                                </p>
+                              </div>
                             </div>
                           ` : ''}
 
@@ -4626,7 +4742,7 @@
           btn.addEventListener('click', () => {
             const categoryId = parseInt(btn.dataset.category);
             const themeId = parseInt(btn.dataset.theme);
-            
+
             // 재시험 시작
             state.showResults = false;
             state.selectedCategory = categoryId;
@@ -4634,6 +4750,40 @@
             state.currentQuestion = 0;
             state.answers = {};
             render();
+          });
+        });
+
+        // 오답테스트 버튼 이벤트 리스너
+        document.querySelectorAll('.wrong-answer-test-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const attemptIndex = parseInt(btn.dataset.attemptIndex);
+            const currentStudentAttempts = state.allStudentData[state.studentName]?.attempts || [];
+
+            // 선택된 카테고리의 시도들 필터링
+            const categoryAttempts = state.recordSelectedCategory
+              ? currentStudentAttempts.filter(a => a.categoryId === state.recordSelectedCategory)
+              : currentStudentAttempts;
+
+            // Theme별로 그룹화하고 최신 시도 찾기
+            const themeGroups = {};
+            categoryAttempts.forEach(attempt => {
+              const key = `${attempt.categoryId}-${attempt.themeId}`;
+              if (!themeGroups[key]) {
+                themeGroups[key] = [];
+              }
+              themeGroups[key].push(attempt);
+            });
+
+            // 각 그룹의 최신 시도들
+            const latestAttempts = Object.values(themeGroups).map(group => {
+              return group.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+            });
+
+            const selectedAttempt = latestAttempts[attemptIndex];
+
+            if (selectedAttempt) {
+              startWrongAnswerTest(selectedAttempt);
+            }
           });
         });
       } else {
