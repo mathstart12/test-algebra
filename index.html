@@ -2000,7 +2000,10 @@
       // Canvas 관련
       currentCanvas: null,
       penColor: '#000000',
-      penSize: 3
+      penSize: 3,
+      // 퀴즈 진행 관련
+      quizStartTime: null, // 퀴즈 시작 시간
+      teacherNotes: {} // 선생님 메모 { themeId: { questionIndex: "메모 내용" } }
     };
 
     // ===== Canvas 드로잉 관련 함수 =====
@@ -2444,10 +2447,11 @@
 
     function handleStartQuiz(themeId) {
       if (isLocked(state.selectedCategory, themeId)) return;
-      
+
       state.currentTheme = themeId;
       state.currentQuestion = 0;
       state.answers = {};
+      state.quizStartTime = Date.now(); // 퀴즈 시작 시간 기록
       render();
     }
 
@@ -2515,6 +2519,9 @@
         .filter(q => state.answers[q.index] && !state.answers[q.index].correct)
         .map(q => q.question);
 
+      // 총 소요 시간 계산 (밀리초)
+      const totalTime = state.quizStartTime ? Date.now() - state.quizStartTime : 0;
+
       const attemptData = {
         categoryId: state.selectedCategory,
         categoryName: category.name,
@@ -2525,7 +2532,9 @@
         total,
         percentage,
         wrongQuestions,
-        answers: { ...state.answers }
+        answers: { ...state.answers },
+        totalTime, // 총 소요 시간 (밀리초)
+        teacherNotes: state.teacherNotes[state.currentTheme] || {} // 선생님 메모
       };
 
       // 선생님이 학생의 테스트를 진행한 경우, 학생 데이터에 저장
@@ -2572,6 +2581,7 @@
       state.currentTheme = null;
       state.currentQuestion = 0;
       state.answers = {};
+      state.quizStartTime = null;
       state.selectedCategory = null;
       render();
     }
@@ -3903,6 +3913,17 @@
                     <span class="text-orange-400 font-bold">💡 힌트:</span> ${question.hint}
                   </p>
                 `}
+                  ${state.userType === 'admin' ? `
+                    <div class="mt-4 pt-4 border-t border-gray-700">
+                      <label class="text-sm text-gray-300 font-bold mb-2 block">📝 선생님 메모:</label>
+                      <textarea
+                        id="teacherNote-${state.currentQuestion}"
+                        class="w-full p-3 bg-gray-900/50 border border-gray-700 rounded-lg text-sm text-gray-300 focus:border-orange-500 focus:outline-none resize-none"
+                        rows="3"
+                        placeholder="이 문제에 대한 메모를 입력하세요..."
+                      >${state.teacherNotes[state.currentTheme]?.[state.currentQuestion] || ''}</textarea>
+                    </div>
+                  ` : ''}
                 </div>
               ` : ''}
             </div>
@@ -4005,6 +4026,19 @@
       setTimeout(() => {
         initCanvas('drawingCanvas');
       }, 0);
+
+      // 선생님 메모 이벤트 리스너 (관리자만)
+      if (state.userType === 'admin' && answer) {
+        const teacherNoteTextarea = document.getElementById(`teacherNote-${state.currentQuestion}`);
+        if (teacherNoteTextarea) {
+          teacherNoteTextarea.addEventListener('input', (e) => {
+            if (!state.teacherNotes[state.currentTheme]) {
+              state.teacherNotes[state.currentTheme] = {};
+            }
+            state.teacherNotes[state.currentTheme][state.currentQuestion] = e.target.value;
+          });
+        }
+      }
     }
 
     function renderResultsScreen(app, currentStudentAttempts) {
@@ -4090,7 +4124,7 @@
                             </div>
                           </div>
                           
-                          <div class="grid grid-cols-3 gap-4 pt-4 border-t border-gray-800 mb-4">
+                          <div class="grid grid-cols-4 gap-4 pt-4 border-t border-gray-800 mb-4">
                             <div class="text-center">
                               <div class="text-lg font-bold text-green-400">${lastAttempt.correct}</div>
                               <div class="text-xs text-gray-500">맞힌 개수</div>
@@ -4102,6 +4136,15 @@
                             <div class="text-center">
                               <div class="text-lg font-bold text-blue-400">${attempts.length}</div>
                               <div class="text-xs text-gray-500">시도 횟수</div>
+                            </div>
+                            <div class="text-center">
+                              <div class="text-lg font-bold text-purple-400">${(() => {
+                                const totalMs = lastAttempt.totalTime || 0;
+                                const mins = Math.floor(totalMs / 60000);
+                                const secs = Math.floor((totalMs % 60000) / 1000);
+                                return mins > 0 ? `${mins}분 ${secs}초` : `${secs}초`;
+                              })()}</div>
+                              <div class="text-xs text-gray-500">소요 시간</div>
                             </div>
                           </div>
 
@@ -4162,6 +4205,51 @@
                               ` : ''}
                             </div>
                           ` : ''}
+
+                          <!-- 상세 문제별 기록 (필기 및 선생님 메모) -->
+                          ${(() => {
+                            const hasHandwriting = lastAttempt.answers && Object.values(lastAttempt.answers).some(a => a.imageUrl);
+                            const hasTeacherNotes = lastAttempt.teacherNotes && Object.keys(lastAttempt.teacherNotes).length > 0;
+
+                            if (!hasHandwriting && !hasTeacherNotes) return '';
+
+                            return `
+                              <div class="mt-4 bg-gray-800/30 border border-gray-700 rounded-xl p-4">
+                                <h4 class="text-sm font-bold text-blue-400 mb-3 flex items-center">
+                                  ${icon('fileText', 'mr-2', 18)}문제별 상세 기록
+                                </h4>
+                                <div class="space-y-4">
+                                  ${theme.questions.map((q, idx) => {
+                                    const answer = lastAttempt.answers?.[idx];
+                                    const teacherNote = lastAttempt.teacherNotes?.[idx];
+
+                                    if (!answer?.imageUrl && !teacherNote) return '';
+
+                                    return `
+                                      <div class="bg-gray-900/50 rounded-lg p-3 border border-gray-700">
+                                        <p class="text-sm text-gray-300 font-medium mb-2">문제 ${idx + 1}</p>
+                                        <p class="text-xs text-gray-400 mb-3 leading-relaxed">${q.question}</p>
+
+                                        ${answer?.imageUrl ? `
+                                          <div class="mb-3">
+                                            <p class="text-xs text-blue-400 font-semibold mb-2">✏️ 필기 내용:</p>
+                                            <img src="${answer.imageUrl}" alt="필기 ${idx + 1}" class="w-full rounded-lg border border-gray-700" />
+                                          </div>
+                                        ` : ''}
+
+                                        ${teacherNote ? `
+                                          <div class="bg-orange-900/20 border border-orange-500/30 rounded p-2">
+                                            <p class="text-xs text-orange-400 font-semibold mb-1">📝 선생님 메모:</p>
+                                            <p class="text-xs text-gray-300 leading-relaxed">${teacherNote}</p>
+                                          </div>
+                                        ` : ''}
+                                      </div>
+                                    `;
+                                  }).filter(Boolean).join('')}
+                                </div>
+                              </div>
+                            `;
+                          })()}
                         </div>
                       `;
                     }).join('');
