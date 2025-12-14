@@ -91,6 +91,16 @@
       return `<svg class="${className}" style="width:${size}px;height:${size}px;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${icons[type]}</svg>`;
     }
 
+    // 시간 포맷 함수 (초 → "분 초" 형식)
+    function formatTime(seconds) {
+      if (!seconds || seconds === 0) return '0초';
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      if (mins === 0) return `${secs}초`;
+      if (secs === 0) return `${mins}분`;
+      return `${mins}분 ${secs}초`;
+    }
+
     // State 관리
     const state = {
       isLoggedIn: false,
@@ -107,7 +117,9 @@
       similarIndex: 0,
       progress: {}, // 학생의 진도 데이터
       loading: false,
-      registerType: null // 'teacher' 또는 'student'
+      registerType: null, // 'teacher' 또는 'student'
+      questionStartTime: null, // 문제 시작 시간
+      sessionTimes: {} // 세션별 시간 기록 { questionIndex: timeInSeconds }
     };
 
     // 카테고리 데이터
@@ -1415,9 +1427,22 @@
       }
     }
 
-    async function saveProgress(studentId, studentName, categoryId, chapterId, categoryName, chapterName, completedQuestions, totalQuestions) {
+    async function saveProgress(studentId, studentName, categoryId, chapterId, categoryName, chapterName, completedQuestions, totalQuestions, questionTimes) {
       try {
         const progressId = `${studentId}_${categoryId}_${chapterId}`;
+
+        // 기존 진도 데이터 가져오기
+        const existingDoc = await db.collection('auth_progress').doc(progressId).get();
+        const existingData = existingDoc.exists ? existingDoc.data() : {};
+
+        // 기존 시간 데이터와 병합
+        const mergedTimes = { ...(existingData.questionTimes || {}), ...questionTimes };
+
+        // 오늘 날짜의 총 시간 계산
+        const today = new Date().toISOString().split('T')[0];
+        const todayTimes = existingData.dailyTimes || {};
+        const todayTotal = (todayTimes[today] || 0) + Object.values(questionTimes).reduce((sum, time) => sum + time, 0);
+
         const progressData = {
           studentId: studentId,
           studentName: studentName,
@@ -1429,6 +1454,9 @@
           completedQuestions: completedQuestions,
           lastTestedIndex: Math.max(...completedQuestions),
           fullyTested: completedQuestions.length === totalQuestions,
+          questionTimes: mergedTimes, // 각 문제별 소요 시간 (초)
+          dailyTimes: { ...todayTimes, [today]: todayTotal }, // 날짜별 총 시간
+          totalTime: Object.values(mergedTimes).reduce((sum, time) => sum + time, 0), // 전체 총 시간
           updatedAt: new Date().toISOString()
         };
 
@@ -2124,9 +2152,15 @@
       }
 
       const progressKey = `${category.id}_${chapter.id}`;
-      const chapterProgress = state.progress[progressKey] || { completedQuestions: [] };
+      const chapterProgress = state.progress[progressKey] || { completedQuestions: [], questionTimes: {}, dailyTimes: {} };
       const completedCount = chapterProgress.completedQuestions.length;
       const isCurrentCompleted = chapterProgress.completedQuestions.includes(state.currentQuestionIndex);
+
+      // 오늘 날짜의 총 테스트 시간 계산
+      const today = new Date().toISOString().split('T')[0];
+      const todaySessionTime = Object.values(state.sessionTimes).reduce((sum, time) => sum + time, 0);
+      const todayPreviousTime = chapterProgress.dailyTimes?.[today] || 0;
+      const todayTotalTime = todayPreviousTime + todaySessionTime;
 
       return `
         <div class="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-4">
@@ -2153,6 +2187,33 @@
                 </div>
               </div>
             </div>
+
+            <!-- 오늘 테스트 시간 -->
+            ${todayTotalTime > 0 ? `
+            <div class="bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-2xl p-4 mb-6 border border-blue-500/30">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  <span class="text-gray-300 text-sm">오늘 구두테스트 시간</span>
+                </div>
+                <span class="text-xl font-bold text-blue-400">${formatTime(todayTotalTime)}</span>
+              </div>
+              ${Object.keys(state.sessionTimes).length > 0 ? `
+                <div class="mt-3 pt-3 border-t border-blue-500/20">
+                  <p class="text-gray-400 text-xs mb-2">이번 세션:</p>
+                  <div class="flex flex-wrap gap-2">
+                    ${Object.entries(state.sessionTimes).map(([qIdx, time]) => `
+                      <span class="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded">
+                        Q${parseInt(qIdx) + 1}: ${formatTime(time)}
+                      </span>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+            ` : ''}
 
             <!-- 문제 네비게이션 -->
             <div class="bg-gray-800 rounded-2xl p-4 mb-6 border border-gray-700">
@@ -2357,17 +2418,21 @@
       state.currentChapter = state.currentCategory.chapters.find(ch => ch.id === chapterId);
       state.currentQuestionIndex = 0;
       state.currentView = 'quiz';
+      state.sessionTimes = {}; // 세션 시간 초기화
+      state.questionStartTime = Date.now(); // 타이머 시작
       render();
     }
 
     function goToQuestion(index) {
       state.currentQuestionIndex = index;
+      state.questionStartTime = Date.now(); // 새 문제 타이머 시작
       render();
     }
 
     function previousQuestion() {
       if (state.currentQuestionIndex > 0) {
         state.currentQuestionIndex--;
+        state.questionStartTime = Date.now(); // 새 문제 타이머 시작
         render();
       }
     }
@@ -2375,6 +2440,7 @@
     function nextQuestion() {
       if (state.currentQuestionIndex < state.currentChapter.questions.length - 1) {
         state.currentQuestionIndex++;
+        state.questionStartTime = Date.now(); // 새 문제 타이머 시작
         render();
       }
     }
@@ -2402,6 +2468,10 @@
       const chapter = state.currentChapter;
       const progressKey = `${category.id}_${chapter.id}`;
 
+      // 소요 시간 계산 (초 단위)
+      const elapsedTime = state.questionStartTime ? Math.round((Date.now() - state.questionStartTime) / 1000) : 0;
+      state.sessionTimes[state.currentQuestionIndex] = elapsedTime;
+
       // 현재 진도 가져오기
       let chapterProgress = state.progress[progressKey] || { completedQuestions: [] };
 
@@ -2410,7 +2480,7 @@
         chapterProgress.completedQuestions.push(state.currentQuestionIndex);
         chapterProgress.completedQuestions.sort((a, b) => a - b);
 
-        // Firebase에 저장
+        // Firebase에 저장 (시간 데이터 포함)
         try {
           await saveProgress(
             state.selectedStudent.id,
@@ -2420,7 +2490,8 @@
             category.name,
             chapter.name,
             chapterProgress.completedQuestions,
-            chapter.questions.length
+            chapter.questions.length,
+            { [state.currentQuestionIndex]: elapsedTime }
           );
 
           // 로컬 state 업데이트
