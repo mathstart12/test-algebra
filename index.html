@@ -12,6 +12,7 @@
   <link rel="apple-touch-icon" href="/icon-192.png">
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -70,6 +71,7 @@
       firebase.initializeApp(firebaseConfig);
     }
     const db = firebase.firestore();
+    const storage = firebase.storage();
 
     // 아이콘 정의
     const icons = {
@@ -109,7 +111,7 @@
       userName: null,
       selectedStudent: null, // 선생님이 선택한 학생
       students: [], // 선생님의 학생 목록
-      currentView: 'login', // 'login', 'teacherHome', 'studentHome', 'quiz', 'register'
+      currentView: 'login', // 'login', 'teacherHome', 'studentHome', 'quiz', 'register', 'history'
       currentCategory: null,
       currentChapter: null,
       currentQuestionIndex: 0,
@@ -119,7 +121,16 @@
       loading: false,
       registerType: null, // 'teacher' 또는 'student'
       questionStartTime: null, // 문제 시작 시간
-      sessionTimes: {} // 세션별 시간 기록 { questionIndex: timeInSeconds }
+      sessionTimes: {}, // 세션별 시간 기록 { questionIndex: timeInSeconds }
+      sessionMemos: {}, // 세션별 메모 { questionIndex: memo }
+      currentSessionId: null, // 현재 세션 ID
+      testHistory: [], // 학생의 전체 테스트 기록
+      // Canvas 관련
+      canvasData: {}, // 문제별 필기 데이터 { questionIndex: imageUrl }
+      currentCanvas: null, // 현재 그리기 중인 canvas 참조
+      penColor: '#000000', // 펜 색상
+      penSize: 3, // 펜 굵기
+      isDrawing: false // 그리기 중인지 여부
     };
 
     // 카테고리 데이터
@@ -1392,6 +1403,186 @@
       }
     }
 
+    // ===== Canvas 드로잉 관련 함수 =====
+
+    function initCanvas(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return null;
+
+      const ctx = canvas.getContext('2d');
+
+      // 고해상도 디스플레이 지원
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+
+      // Canvas 스타일 설정
+      canvas.style.width = rect.width + 'px';
+      canvas.style.height = rect.height + 'px';
+
+      // 배경 흰색으로 초기화
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // 기본 펜 설정
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = state.penColor;
+      ctx.lineWidth = state.penSize;
+
+      state.currentCanvas = canvas;
+      setupCanvasEvents(canvasId);
+
+      return canvas;
+    }
+
+    function setupCanvasEvents(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      const rect = canvas.getBoundingClientRect();
+      let isDrawing = false;
+      let lastX = 0;
+      let lastY = 0;
+
+      function getCoordinates(e) {
+        const rect = canvas.getBoundingClientRect();
+        if (e.touches && e.touches[0]) {
+          return {
+            x: e.touches[0].clientX - rect.left,
+            y: e.touches[0].clientY - rect.top
+          };
+        }
+        return {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+        };
+      }
+
+      function startDrawing(e) {
+        e.preventDefault();
+        isDrawing = true;
+        const coords = getCoordinates(e);
+        lastX = coords.x;
+        lastY = coords.y;
+      }
+
+      function draw(e) {
+        if (!isDrawing) return;
+        e.preventDefault();
+
+        const coords = getCoordinates(e);
+        ctx.strokeStyle = state.penColor;
+        ctx.lineWidth = state.penSize;
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(coords.x, coords.y);
+        ctx.stroke();
+
+        lastX = coords.x;
+        lastY = coords.y;
+      }
+
+      function stopDrawing(e) {
+        if (isDrawing) {
+          e.preventDefault();
+          isDrawing = false;
+        }
+      }
+
+      // 터치 이벤트
+      canvas.addEventListener('touchstart', startDrawing, { passive: false });
+      canvas.addEventListener('touchmove', draw, { passive: false });
+      canvas.addEventListener('touchend', stopDrawing, { passive: false });
+      canvas.addEventListener('touchcancel', stopDrawing, { passive: false });
+
+      // 마우스 이벤트
+      canvas.addEventListener('mousedown', startDrawing);
+      canvas.addEventListener('mousemove', draw);
+      canvas.addEventListener('mouseup', stopDrawing);
+      canvas.addEventListener('mouseleave', stopDrawing);
+    }
+
+    function clearCanvas() {
+      const canvas = state.currentCanvas;
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      const rect = canvas.getBoundingClientRect();
+
+      // 배경 흰색으로 초기화
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      render();
+    }
+
+    function changePenColor(color) {
+      state.penColor = color;
+      render();
+    }
+
+    function changePenSize(size) {
+      state.penSize = size;
+      render();
+    }
+
+    async function uploadCanvasImage(canvas, studentId, questionIndex) {
+      try {
+        // 이미지 압축 최적화 (용량 70% 절감)
+        const maxWidth = 800; // 최대 너비
+        const quality = 0.6; // 압축 품질 (0.6 = 60%)
+
+        // Canvas 크기 조정
+        let width = canvas.width;
+        let height = canvas.height;
+
+        if (width > maxWidth) {
+          const ratio = maxWidth / width;
+          width = maxWidth;
+          height = height * ratio;
+        }
+
+        // 임시 Canvas 생성 (크기 축소)
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = width;
+        tempCanvas.height = height;
+        const tempCtx = tempCanvas.getContext('2d');
+
+        // 원본을 축소된 크기로 그리기
+        tempCtx.drawImage(canvas, 0, 0, width, height);
+
+        // JPEG로 변환 (PNG보다 용량 작음)
+        const blob = await new Promise(resolve => {
+          tempCanvas.toBlob(resolve, 'image/jpeg', quality);
+        });
+
+        // Firebase Storage에 업로드
+        const filename = `handwriting/${studentId}/q${questionIndex}_${Date.now()}.jpg`;
+        const storageRef = storage.ref(filename);
+        const snapshot = await storageRef.put(blob);
+        const downloadUrl = await snapshot.ref.getDownloadURL();
+
+        return downloadUrl;
+      } catch (error) {
+        console.error('이미지 업로드 오류:', error);
+        throw error;
+      }
+    }
+
+    async function deleteCanvasImage(imageUrl) {
+      try {
+        if (!imageUrl) return;
+        const storageRef = storage.refFromURL(imageUrl);
+        await storageRef.delete();
+      } catch (error) {
+        console.error('이미지 삭제 오류:', error);
+      }
+    }
+
     async function resetStudentPassword(studentId, newPassword) {
       try {
         await db.collection('auth_students').doc(studentId).update({
@@ -1465,6 +1656,51 @@
       } catch (error) {
         console.error('진도 저장 오류:', error);
         throw error;
+      }
+    }
+
+    // 테스트 세션 기록 저장
+    async function saveTestSession(studentId, studentName, categoryId, chapterId, categoryName, chapterName, questionRecords) {
+      try {
+        const sessionData = {
+          studentId: studentId,
+          studentName: studentName,
+          categoryId: categoryId,
+          chapterId: chapterId,
+          categoryName: categoryName,
+          chapterName: chapterName,
+          date: new Date().toISOString(),
+          dateOnly: new Date().toISOString().split('T')[0],
+          questions: questionRecords, // [{ questionIndex, questionText, time, memo }]
+          totalTime: questionRecords.reduce((sum, q) => sum + (q.time || 0), 0),
+          questionCount: questionRecords.length,
+          teacherName: state.userName
+        };
+
+        await db.collection('auth_test_sessions').add(sessionData);
+        return true;
+      } catch (error) {
+        console.error('테스트 세션 저장 오류:', error);
+        throw error;
+      }
+    }
+
+    // 학생의 테스트 기록 로드
+    async function loadTestHistory(studentId) {
+      try {
+        const sessionsSnapshot = await db.collection('auth_test_sessions')
+          .where('studentId', '==', studentId)
+          .orderBy('date', 'desc')
+          .limit(50)
+          .get();
+
+        return sessionsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+      } catch (error) {
+        console.error('테스트 기록 로드 오류:', error);
+        return [];
       }
     }
 
@@ -2102,6 +2338,15 @@
               </div>
             </div>
 
+            <!-- 학습 기록 버튼 -->
+            <button
+              onclick="showTestHistory()"
+              class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-4 px-6 rounded-2xl transition-all mb-6 flex items-center justify-center gap-3 border border-blue-500"
+            >
+              <span class="text-2xl">📋</span>
+              <span>학습 기록 보기</span>
+            </button>
+
             <!-- 카테고리 목록 -->
             <div class="space-y-4">
               ${categories.map(category => `
@@ -2258,6 +2503,63 @@
                 <div class="text-lg leading-relaxed text-white">${currentQuestion.question}</div>
               </div>
 
+              <!-- Canvas 드로잉 영역 -->
+              <div class="mb-6">
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="text-white font-semibold flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                    </svg>
+                    필기 영역
+                  </h3>
+                  <button
+                    onclick="clearCanvas()"
+                    class="text-sm bg-red-500/20 hover:bg-red-500/30 text-red-400 px-3 py-1 rounded-lg transition-all"
+                  >
+                    전체 지우기
+                  </button>
+                </div>
+
+                <!-- Canvas -->
+                <canvas
+                  id="drawingCanvas"
+                  class="w-full bg-white rounded-xl mb-3 touch-none"
+                  style="height: 300px; border: 2px solid #374151;"
+                ></canvas>
+
+                <!-- 펜 도구 -->
+                <div class="flex items-center gap-4 bg-gray-900/50 p-3 rounded-xl">
+                  <!-- 펜 색상 -->
+                  <div class="flex items-center gap-2">
+                    <span class="text-gray-400 text-sm">색상:</span>
+                    <div class="flex gap-2">
+                      ${['#000000', '#FF0000', '#0000FF', '#00AA00', '#FF6B00'].map(color => `
+                        <button
+                          onclick="changePenColor('${color}')"
+                          class="w-8 h-8 rounded-full border-2 ${state.penColor === color ? 'border-white ring-2 ring-orange-400' : 'border-gray-600'} transition-all"
+                          style="background-color: ${color};"
+                        ></button>
+                      `).join('')}
+                    </div>
+                  </div>
+
+                  <!-- 펜 굵기 -->
+                  <div class="flex items-center gap-2">
+                    <span class="text-gray-400 text-sm">굵기:</span>
+                    <div class="flex gap-2">
+                      ${[2, 3, 5, 8].map(size => `
+                        <button
+                          onclick="changePenSize(${size})"
+                          class="w-8 h-8 rounded-lg flex items-center justify-center ${state.penSize === size ? 'bg-orange-500 text-white' : 'bg-gray-700 text-gray-300'} transition-all"
+                        >
+                          ${size}
+                        </button>
+                      `).join('')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <!-- 버튼들 -->
               <div class="flex gap-3">
                 ${state.currentQuestionIndex > 0 ? `
@@ -2412,6 +2714,125 @@
       `;
     }
 
+    function renderHistory() {
+      const student = state.selectedStudent;
+
+      return `
+        <div class="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-4">
+          <div class="max-w-6xl mx-auto">
+            <!-- 헤더 -->
+            <div class="bg-gray-800 rounded-2xl p-6 mb-6 border border-gray-700">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <button onclick="backToCategorySelect()" class="text-gray-400 hover:text-white">
+                    ${icon('chevronLeft')}
+                  </button>
+                  <div>
+                    <h1 class="text-2xl font-bold text-white">${student.name} 학생 학습 기록</h1>
+                    <p class="text-gray-400 text-sm">전체 ${state.testHistory.length}개의 테스트 세션</p>
+                  </div>
+                </div>
+                <button onclick="logout()" class="text-gray-400 hover:text-white">
+                  ${icon('logout')}
+                </button>
+              </div>
+            </div>
+
+            <!-- 테스트 기록 목록 -->
+            ${state.testHistory.length === 0 ? `
+              <div class="bg-gray-800 rounded-2xl p-12 border border-gray-700 text-center">
+                <div class="text-5xl mb-4">📋</div>
+                <p class="text-gray-400 text-lg">아직 테스트 기록이 없습니다.</p>
+              </div>
+            ` : `
+              <div class="space-y-4">
+                ${state.testHistory.map((session, idx) => {
+                  const sessionDate = new Date(session.date);
+                  const dateStr = sessionDate.toLocaleDateString('ko-KR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    weekday: 'short'
+                  });
+                  const timeStr = sessionDate.toLocaleTimeString('ko-KR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  });
+
+                  return `
+                    <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700 hover:border-gray-600 transition-all">
+                      <!-- 세션 헤더 -->
+                      <div class="flex items-start justify-between mb-4">
+                        <div class="flex-1">
+                          <div class="flex items-center gap-3 mb-2">
+                            <span class="text-2xl">📅</span>
+                            <div>
+                              <h3 class="text-lg font-bold text-white">${dateStr} ${timeStr}</h3>
+                              <p class="text-sm text-gray-400">${session.categoryName} - ${session.chapterName}</p>
+                            </div>
+                          </div>
+                          <div class="flex gap-4 mt-3">
+                            <div class="bg-blue-900/30 px-3 py-1 rounded-lg border border-blue-500/30">
+                              <span class="text-xs text-gray-400">문제 수</span>
+                              <span class="ml-2 text-sm font-bold text-blue-400">${session.questionCount}개</span>
+                            </div>
+                            <div class="bg-purple-900/30 px-3 py-1 rounded-lg border border-purple-500/30">
+                              <span class="text-xs text-gray-400">총 시간</span>
+                              <span class="ml-2 text-sm font-bold text-purple-400">${formatTime(session.totalTime)}</span>
+                            </div>
+                            <div class="bg-green-900/30 px-3 py-1 rounded-lg border border-green-500/30">
+                              <span class="text-xs text-gray-400">선생님</span>
+                              <span class="ml-2 text-sm font-bold text-green-400">${session.teacherName}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 문제별 상세 내역 -->
+                      <div class="mt-4 pt-4 border-t border-gray-700">
+                        <p class="text-sm font-medium text-gray-300 mb-3">문제별 상세</p>
+                        <div class="space-y-2">
+                          ${session.questions.map((q, qIdx) => `
+                            <div class="bg-gray-700/50 rounded-lg p-3">
+                              <div class="flex items-start justify-between gap-3">
+                                <div class="flex-1">
+                                  <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-sm font-bold text-orange-400">Q${q.questionNumber}</span>
+                                    <span class="text-xs text-gray-500">•</span>
+                                    <span class="text-xs text-blue-300">${formatTime(q.time)}</span>
+                                  </div>
+                                  ${q.memo ? `
+                                    <div class="mt-2 bg-yellow-900/20 border border-yellow-500/30 rounded px-2 py-1">
+                                      <span class="text-xs text-yellow-300">💬 ${q.memo}</span>
+                                    </div>
+                                  ` : ''}
+                                  ${q.imageUrl ? `
+                                    <div class="mt-3">
+                                      <p class="text-xs text-gray-400 mb-2">✏️ 학생 필기</p>
+                                      <img
+                                        src="${q.imageUrl}"
+                                        alt="필기 이미지"
+                                        class="w-full rounded-lg border border-gray-600 cursor-pointer hover:border-orange-400 transition-all"
+                                        onclick="window.open('${q.imageUrl}', '_blank')"
+                                      />
+                                    </div>
+                                  ` : ''}
+                                </div>
+                              </div>
+                            </div>
+                          `).join('')}
+                        </div>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            `}
+          </div>
+        </div>
+      `;
+    }
+
     // 퀴즈 관련 함수들
     function startChapterTest(categoryId, chapterId) {
       state.currentCategory = categories.find(c => c.id === categoryId);
@@ -2419,7 +2840,19 @@
       state.currentQuestionIndex = 0;
       state.currentView = 'quiz';
       state.sessionTimes = {}; // 세션 시간 초기화
+      state.sessionMemos = {}; // 세션 메모 초기화
+      state.canvasData = {}; // Canvas 데이터 초기화
       state.questionStartTime = Date.now(); // 타이머 시작
+      render();
+    }
+
+    async function showTestHistory() {
+      state.loading = true;
+      render();
+
+      state.testHistory = await loadTestHistory(state.selectedStudent.id);
+      state.currentView = 'history';
+      state.loading = false;
       render();
     }
 
@@ -2472,6 +2905,31 @@
       const elapsedTime = state.questionStartTime ? Math.round((Date.now() - state.questionStartTime) / 1000) : 0;
       state.sessionTimes[state.currentQuestionIndex] = elapsedTime;
 
+      // 메모 입력 받기
+      const memo = prompt('선생님 메모 (선택사항):\n\n예: "잘함", "다시 복습 필요", "개념 이해 완벽"');
+      if (memo !== null) {
+        state.sessionMemos[state.currentQuestionIndex] = memo || '';
+      } else {
+        // 취소한 경우 완료 처리 중단
+        return;
+      }
+
+      // Canvas 이미지 업로드
+      let imageUrl = null;
+      if (state.currentCanvas) {
+        try {
+          imageUrl = await uploadCanvasImage(
+            state.currentCanvas,
+            state.selectedStudent.id,
+            state.currentQuestionIndex
+          );
+          state.canvasData[state.currentQuestionIndex] = imageUrl;
+        } catch (error) {
+          console.error('필기 이미지 저장 오류:', error);
+          // 이미지 저장 실패해도 진행 계속
+        }
+      }
+
       // 현재 진도 가져오기
       let chapterProgress = state.progress[progressKey] || { completedQuestions: [] };
 
@@ -2505,11 +2963,47 @@
     }
 
     async function finishTest() {
-      if (confirm('테스트를 종료하시겠습니까?')) {
-        state.currentView = 'categorySelect';
-        state.currentQuestionIndex = 0;
-        render();
+      if (!confirm('테스트를 종료하시겠습니까?\n\n이번 세션의 테스트 기록이 저장됩니다.')) {
+        return;
       }
+
+      // 세션 기록 저장
+      const category = state.currentCategory;
+      const chapter = state.currentChapter;
+
+      if (Object.keys(state.sessionTimes).length > 0) {
+        const questionRecords = Object.entries(state.sessionTimes).map(([qIdx, time]) => ({
+          questionIndex: parseInt(qIdx),
+          questionNumber: parseInt(qIdx) + 1,
+          questionText: chapter.questions[parseInt(qIdx)]?.question || '',
+          time: time,
+          memo: state.sessionMemos[qIdx] || '',
+          imageUrl: state.canvasData[qIdx] || null
+        }));
+
+        try {
+          await saveTestSession(
+            state.selectedStudent.id,
+            state.selectedStudent.name,
+            category.id,
+            chapter.id,
+            category.name,
+            chapter.name,
+            questionRecords
+          );
+
+          alert('테스트 기록이 저장되었습니다!');
+        } catch (error) {
+          console.error('세션 저장 오류:', error);
+        }
+      }
+
+      state.currentView = 'categorySelect';
+      state.currentQuestionIndex = 0;
+      state.sessionTimes = {};
+      state.sessionMemos = {};
+      state.canvasData = {};
+      render();
     }
 
     function backToTeacherHome() {
@@ -2601,6 +3095,9 @@
         case 'studentQuiz':
           html = renderStudentQuiz();
           break;
+        case 'history':
+          html = renderHistory();
+          break;
         default:
           html = renderLoginScreen();
       }
@@ -2616,6 +3113,13 @@
           ],
           throwOnError: false
         });
+      }
+
+      // Canvas 초기화 (quiz 뷰일 때만)
+      if (state.currentView === 'quiz') {
+        setTimeout(() => {
+          initCanvas('drawingCanvas');
+        }, 0);
       }
     }
 
