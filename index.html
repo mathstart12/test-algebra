@@ -2191,20 +2191,16 @@
       state.canvasStrokes = [];
     }
 
+    // 펜 모드로 전환
+    function setPenMode() {
+      state.isEraserMode = false;
+      render();
+    }
+
     // 지우개 모드 토글
     function toggleEraser() {
       state.isEraserMode = !state.isEraserMode;
-      const eraserBtn = document.getElementById('eraserBtn');
-
-      if (eraserBtn) {
-        if (state.isEraserMode) {
-          eraserBtn.classList.remove('bg-gray-700', 'text-gray-300');
-          eraserBtn.classList.add('bg-blue-600', 'text-white');
-        } else {
-          eraserBtn.classList.remove('bg-blue-600', 'text-white');
-          eraserBtn.classList.add('bg-gray-700', 'text-gray-300');
-        }
-      }
+      render();
     }
 
     function changePenColor(color) {
@@ -2351,7 +2347,7 @@
       stopQuestionTimer();
 
       render();
-      setTimeout(() => startQuestionTimer(), 100);
+      // 타이머는 수동으로 시작해야 함
     }
 
     async function uploadCanvasImage(canvas, studentId, questionIndex) {
@@ -2708,8 +2704,7 @@
       state.isEraserMode = false; // 지우개 모드 해제
       stopQuestionTimer(); // 기존 타이머 정리
       render();
-      // render 후 타이머 시작
-      setTimeout(() => startQuestionTimer(), 100);
+      // 타이머는 수동으로 시작해야 함
     }
 
     async function handleAnswer(selectedAnswer) {
@@ -2765,11 +2760,8 @@
         state.canvasStrokes = []; // 다음 문제로 이동 시 캔버스 획 초기화
         state.isEraserMode = false; // 지우개 모드 해제
 
-        // 다음 문제의 타이머 시작 (아직 답변 안 한 문제만)
-        if (!state.answers[state.currentQuestion]) {
-          stopQuestionTimer();
-          setTimeout(() => startQuestionTimer(), 100);
-        }
+        // 타이머는 수동으로 시작해야 함
+        stopQuestionTimer();
 
         render();
       }
@@ -2786,11 +2778,8 @@
         state.canvasStrokes = []; // 이전 문제로 이동 시 캔버스 획 초기화
         state.isEraserMode = false; // 지우개 모드 해제
 
-        // 이전 문제의 타이머 시작 (아직 답변 안 한 문제만)
-        if (!state.answers[state.currentQuestion]) {
-          stopQuestionTimer();
-          setTimeout(() => startQuestionTimer(), 100);
-        }
+        // 타이머는 수동으로 시작해야 함
+        stopQuestionTimer();
 
         render();
       }
@@ -4467,11 +4456,27 @@
                     문제 ${state.currentQuestion + 1}
                   </span>
                   ${!answer ? `
-                    <div class="flex items-center gap-2 px-4 py-2 bg-blue-500/20 rounded-lg border border-blue-500/30">
-                      <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                      </svg>
-                      <span id="questionTimer" class="text-lg font-bold text-blue-400">3:00</span>
+                    <div class="flex items-center gap-2">
+                      <div class="flex items-center gap-2 px-4 py-2 bg-blue-500/20 rounded-lg border border-blue-500/30">
+                        <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span id="questionTimer" class="text-lg font-bold text-blue-400">3:00</span>
+                      </div>
+                      <button
+                        id="timerStartBtn"
+                        onclick="startQuestionTimer()"
+                        class="px-3 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-lg transition-all text-xs font-bold"
+                      >
+                        ▶ 시작
+                      </button>
+                      <button
+                        id="timerStopBtn"
+                        onclick="stopQuestionTimer()"
+                        class="px-3 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-all text-xs font-bold"
+                      >
+                        ■ 정지
+                      </button>
                     </div>
                   ` : ''}
                 </div>
@@ -4489,17 +4494,24 @@
                   </h3>
                   <div class="flex gap-2">
                     <button
+                      onclick="setPenMode()"
+                      id="penBtn"
+                      class="text-xs px-3 py-1.5 rounded-lg transition-all font-bold ${!state.isEraserMode ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}"
+                    >
+                      ✏️ 펜
+                    </button>
+                    <button
                       onclick="toggleEraser()"
                       id="eraserBtn"
-                      class="text-xs px-3 py-1 rounded-lg transition-all bg-gray-700 text-gray-300 hover:bg-gray-600"
+                      class="text-xs px-3 py-1.5 rounded-lg transition-all font-bold ${state.isEraserMode ? 'bg-orange-500 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}"
                     >
                       🧹 지우개
                     </button>
                     <button
                       onclick="clearCanvas()"
-                      class="text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 px-3 py-1 rounded-lg transition-all"
+                      class="text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 px-3 py-1.5 rounded-lg transition-all font-bold"
                     >
-                      전체 지우기
+                      🗑️ 전체 지우기
                     </button>
                   </div>
                 </div>
