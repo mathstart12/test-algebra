@@ -3709,8 +3709,8 @@
                                 ${testsNeedingWrongAnswerTest.map(test => {
                                   return `
                                     <button
-                                      onclick="startWrongAnswerTestForStudent('${test.date}')"
-                                      class="w-full px-4 py-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-xl font-bold text-white transition-all transform hover:scale-105 active:scale-95 shadow-lg text-sm"
+                                      class="start-wrong-answer-test-btn w-full px-4 py-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-xl font-bold text-white transition-all transform hover:scale-105 active:scale-95 shadow-lg text-sm"
+                                      data-attempt-date="${test.date}"
                                     >
                                       ${test.themeName} 오답테스트 시작
                                     </button>
@@ -3873,6 +3873,15 @@
           state.answers = {};
 
           render();
+        });
+      });
+
+      // 오답테스트 시작 버튼 이벤트
+      document.querySelectorAll('.start-wrong-answer-test-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const attemptDate = btn.dataset.attemptDate;
+          console.log('오답테스트 버튼 클릭:', attemptDate);
+          startWrongAnswerTestForStudent(attemptDate);
         });
       });
 
