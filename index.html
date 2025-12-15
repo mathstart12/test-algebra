@@ -1999,6 +1999,7 @@
       selectedStudent: null, // 관리자가 선택한 학생
       showAdminRegister: false,
       studentStatusFilter: 'active', // 'active' (재원생) 또는 'withdrawn' (퇴원생)
+      showStudentRecords: false, // 학생 학습 기록 보기 모드
       // 학습 기록 전용
       recordSelectedCategory: null, // 학습 기록에서 선택한 카테고리
       expandedAttempts: {}, // 확장된 시도 목록 { attemptId: true/false }
@@ -2348,6 +2349,27 @@
 
       render();
       // 타이머는 수동으로 시작해야 함
+    }
+
+    function startWrongAnswerTestForStudent(attemptDate) {
+      console.log('=== 선생님이 학생 오답테스트 시작 ===', attemptDate);
+
+      if (!state.selectedStudent) {
+        console.error('선택된 학생이 없습니다.');
+        return;
+      }
+
+      const attempts = state.selectedStudent.attempts || [];
+      const attempt = attempts.find(a => a.date === attemptDate);
+
+      if (!attempt) {
+        console.error('해당 날짜의 시도를 찾을 수 없습니다:', attemptDate);
+        alert('해당 테스트를 찾을 수 없습니다.');
+        return;
+      }
+
+      // 기존 startWrongAnswerTest 함수 호출
+      startWrongAnswerTest(attempt);
     }
 
     async function uploadCanvasImage(canvas, studentId, questionIndex) {
@@ -3329,7 +3351,13 @@
       }
 
       if (state.selectedStudent) {
-        renderAdminStudentDetail(app);
+        // 학습 기록 보기 모드일 때만 학생 상세 기록 표시
+        if (state.showStudentRecords) {
+          renderAdminStudentDetail(app);
+        } else {
+          // 기본적으로 카테고리 선택 화면 표시
+          renderAdminCategorySelection(app);
+        }
         return;
       }
 
@@ -3558,205 +3586,195 @@
             ` : `
               <div class="space-y-6">
                 ${(() => {
-                  // 구두테스트와 오답테스트를 분리
-                  const regularTests = attempts.filter(a => !a.isWrongAnswerTest);
-                  const wrongAnswerTests = attempts.filter(a => a.isWrongAnswerTest);
+                  // 날짜별로 그룹화 (날짜만 추출, 시간 제외)
+                  const dateGroups = {};
+                  attempts.forEach(attempt => {
+                    // 날짜에서 시간 부분 제거
+                    const dateOnly = attempt.date.split('.')[0] + '.' + attempt.date.split('.')[1] + '.' + attempt.date.split('.')[2];
 
-                  // 최신순 정렬
-                  const sortedRegularTests = [...regularTests].sort((a, b) =>
-                    new Date(b.date) - new Date(a.date)
-                  );
-
-                  return sortedRegularTests.map((regularTest, idx) => {
-                    // 해당 구두테스트의 오답테스트 찾기
-                    const wrongTest = wrongAnswerTests.find(w => w.wrongAnswerAttemptId === regularTest.date);
-
-                    const category = categories.find(c => c.id === regularTest.categoryId);
-                    const theme = category?.chapters.find(t => t.id === regularTest.themeId);
-
-                    const regularAttemptId = `admin-regular-${idx}`;
-                    const wrongAttemptId = `admin-wrong-${idx}`;
-                    const isRegularExpanded = state.expandedAttempts[regularAttemptId];
-                    const isWrongExpanded = state.expandedAttempts[wrongAttemptId];
-
-                    // 구두테스트의 맞은/틀린 문제 분류
-                    const regularCorrectQuestions = [];
-                    const regularWrongQuestions = [];
-                    const regularAnsweredQuestions = regularTest.answeredQuestions || Object.keys(regularTest.answers || {}).map(Number);
-
-                    regularAnsweredQuestions.forEach(qIdx => {
-                      const answer = regularTest.answers?.[qIdx];
-                      const question = theme?.questions[qIdx];
-                      if (question) {
-                        if (answer?.correct) {
-                          regularCorrectQuestions.push({ idx: qIdx, question, answer });
-                        } else {
-                          regularWrongQuestions.push({ idx: qIdx, question, answer });
-                        }
-                      }
-                    });
-
-                    // 오답테스트의 맞은/틀린 문제 분류
-                    let wrongCorrectQuestions = [];
-                    let wrongWrongQuestions = [];
-                    if (wrongTest) {
-                      const wrongAnsweredQuestions = wrongTest.answeredQuestions || Object.keys(wrongTest.answers || {}).map(Number);
-                      wrongAnsweredQuestions.forEach(qIdx => {
-                        const answer = wrongTest.answers?.[qIdx];
-                        const question = theme?.questions[qIdx];
-                        if (question) {
-                          if (answer?.correct) {
-                            wrongCorrectQuestions.push({ idx: qIdx, question, answer });
-                          } else {
-                            wrongWrongQuestions.push({ idx: qIdx, question, answer });
-                          }
-                        }
-                      });
+                    if (!dateGroups[dateOnly]) {
+                      dateGroups[dateOnly] = {
+                        date: dateOnly,
+                        regularTests: [],
+                        wrongTests: []
+                      };
                     }
 
+                    if (attempt.isWrongAnswerTest) {
+                      dateGroups[dateOnly].wrongTests.push(attempt);
+                    } else {
+                      dateGroups[dateOnly].regularTests.push(attempt);
+                    }
+                  });
+
+                  // 날짜순으로 정렬 (최신순)
+                  const sortedDates = Object.keys(dateGroups).sort((a, b) => {
+                    return new Date(b.replace(/\. /g, '-')) - new Date(a.replace(/\. /g, '-'));
+                  });
+
+                  return sortedDates.map((dateKey, groupIdx) => {
+                    const group = dateGroups[dateKey];
+                    const allTestsInDate = [...group.regularTests, ...group.wrongTests];
+
+                    // 해당 날짜의 모든 테스트 통계 계산
+                    const totalCorrect = allTestsInDate.reduce((sum, t) => sum + t.correct, 0);
+                    const totalIncorrect = allTestsInDate.reduce((sum, t) => sum + ((t.answeredCount || t.total) - t.correct), 0);
+                    const totalAnswered = totalCorrect + totalIncorrect;
+                    const overallPercentage = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
+
+                    const dateCardId = `admin-date-${groupIdx}`;
+                    const isExpanded = state.expandedAttempts[dateCardId];
+
+                    // 오답테스트가 필요한 구두테스트 찾기 (틀린 문제가 있는 경우)
+                    const testsNeedingWrongAnswerTest = group.regularTests.filter(t => {
+                      const hasWrongAnswers = (t.answeredCount || t.total) - t.correct > 0;
+                      const alreadyHasWrongTest = group.wrongTests.some(w => w.wrongAnswerAttemptId === t.date);
+                      return hasWrongAnswers && !alreadyHasWrongTest;
+                    });
+
                     return `
-                      <div class="grid md:grid-cols-2 gap-4">
-                        <!-- 구두테스트 카드 -->
-                        <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden">
-                          <button
-                            class="attempt-card-header w-full text-left p-4 hover:bg-gray-800/50 transition-all"
-                            data-attempt-id="${regularAttemptId}"
-                          >
-                            <div class="flex items-center justify-between mb-3">
-                              <div class="flex-1">
-                                <div class="flex items-center gap-2 mb-1">
-                                  <h3 class="text-sm font-bold text-white">${regularTest.themeName}</h3>
-                                  <span class="text-xs px-2 py-1 rounded bg-orange-500/20 text-orange-400">
-                                    구두테스트
-                                  </span>
-                                </div>
-                                <p class="text-xs text-gray-500">${regularTest.date}</p>
-                              </div>
-                              <div class="text-2xl font-bold ${regularTest.percentage === 100 ? 'text-green-400' : regularTest.percentage >= 80 ? 'text-orange-400' : 'text-red-400'}">
-                                ${regularTest.percentage}%
-                              </div>
+                      <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden">
+                        <button
+                          class="attempt-card-header w-full text-left p-5 hover:bg-gray-800/50 transition-all"
+                          data-attempt-id="${dateCardId}"
+                        >
+                          <div class="flex items-center justify-between mb-4">
+                            <div class="flex-1">
+                              <h3 class="text-lg font-bold text-white mb-1">${group.date}</h3>
+                              <p class="text-xs text-gray-500">총 ${allTestsInDate.length}개 테스트</p>
                             </div>
-
-                            <div class="grid grid-cols-3 gap-2 pt-3 border-t border-gray-800">
-                              <div class="text-center">
-                                <div class="text-base font-bold text-green-400">${regularTest.correct}</div>
-                                <div class="text-xs text-gray-500">맞힘</div>
-                              </div>
-                              <div class="text-center">
-                                <div class="text-base font-bold text-red-400">${(regularTest.answeredCount || regularTest.total) - regularTest.correct}</div>
-                                <div class="text-xs text-gray-500">틀림</div>
-                              </div>
-                              <div class="text-center flex items-center justify-center">
-                                <svg class="w-4 h-4 transform transition-transform ${isRegularExpanded ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                </svg>
-                              </div>
+                            <div class="text-3xl font-bold ${overallPercentage === 100 ? 'text-green-400' : overallPercentage >= 80 ? 'text-orange-400' : 'text-red-400'}">
+                              ${overallPercentage}%
                             </div>
-                          </button>
+                          </div>
 
-                          ${isRegularExpanded && theme ? `
-                            <div class="border-t border-gray-800 p-4 bg-gray-800/30">
-                              <div class="space-y-3">
-                                ${[...regularCorrectQuestions, ...regularWrongQuestions].map(({ idx, question, answer }) => {
-                                  const isCorrect = answer?.correct;
+                          <div class="grid grid-cols-3 gap-3 pt-4 border-t border-gray-800">
+                            <div class="text-center">
+                              <div class="text-xl font-bold text-green-400">${totalCorrect}</div>
+                              <div class="text-xs text-gray-500">맞힌 개수</div>
+                            </div>
+                            <div class="text-center">
+                              <div class="text-xl font-bold text-red-400">${totalIncorrect}</div>
+                              <div class="text-xs text-gray-500">틀린 개수</div>
+                            </div>
+                            <div class="text-center flex items-center justify-center">
+                              <svg class="w-5 h-5 transform transition-transform ${isExpanded ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                              </svg>
+                            </div>
+                          </div>
+                        </button>
+
+                        ${isExpanded ? `
+                          <div class="border-t border-gray-800 p-5 bg-gray-800/30">
+                            <!-- 오답테스트 시작 버튼들 -->
+                            ${testsNeedingWrongAnswerTest.length > 0 ? `
+                              <div class="mb-6 space-y-2">
+                                <h4 class="text-sm font-bold text-purple-400 mb-3">📝 오답테스트 시작하기</h4>
+                                ${testsNeedingWrongAnswerTest.map(test => {
                                   return `
-                                    <div class="bg-${isCorrect ? 'green' : 'red'}-900/10 border border-${isCorrect ? 'green' : 'red'}-500/30 rounded-lg p-3">
-                                      <p class="text-xs text-${isCorrect ? 'green' : 'red'}-400 font-semibold mb-1">문제 ${idx + 1}</p>
-                                      <p class="text-xs text-gray-300 mb-2 leading-relaxed">${question.question}</p>
-                                      ${answer?.imageUrl ? `
-                                        <div class="mt-2">
-                                          <p class="text-xs text-blue-400 font-semibold mb-1">✏️ 필기:</p>
-                                          <img src="${answer.imageUrl}" alt="필기" class="w-full rounded border border-gray-700" onerror="this.style.display='none'" />
-                                        </div>
-                                      ` : ''}
-                                      ${regularTest.teacherNotes?.[idx] ? `
-                                        <div class="mt-2 bg-orange-900/20 border border-orange-500/30 rounded p-2">
-                                          <p class="text-xs text-orange-400 font-semibold mb-1">📝 선생님 메모:</p>
-                                          <p class="text-xs text-gray-300">${regularTest.teacherNotes[idx]}</p>
-                                        </div>
-                                      ` : ''}
-                                    </div>
+                                    <button
+                                      onclick="startWrongAnswerTestForStudent('${test.date}')"
+                                      class="w-full px-4 py-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-xl font-bold text-white transition-all transform hover:scale-105 active:scale-95 shadow-lg text-sm"
+                                    >
+                                      ${test.themeName} 오답테스트 시작
+                                    </button>
                                   `;
                                 }).join('')}
                               </div>
-                            </div>
-                          ` : ''}
-                        </div>
-
-                        <!-- 오답테스트 카드 (있으면 표시, 없으면 빈 공간) -->
-                        ${wrongTest ? `
-                          <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden">
-                            <button
-                              class="attempt-card-header w-full text-left p-4 hover:bg-gray-800/50 transition-all"
-                              data-attempt-id="${wrongAttemptId}"
-                            >
-                              <div class="flex items-center justify-between mb-3">
-                                <div class="flex-1">
-                                  <div class="flex items-center gap-2 mb-1">
-                                    <h3 class="text-sm font-bold text-white">${wrongTest.themeName}</h3>
-                                    <span class="text-xs px-2 py-1 rounded bg-purple-500/20 text-purple-400">
-                                      오답테스트
-                                    </span>
-                                  </div>
-                                  <p class="text-xs text-gray-500">${wrongTest.date}</p>
-                                </div>
-                                <div class="text-2xl font-bold ${wrongTest.percentage === 100 ? 'text-green-400' : wrongTest.percentage >= 80 ? 'text-purple-400' : 'text-red-400'}">
-                                  ${wrongTest.percentage}%
-                                </div>
-                              </div>
-
-                              <div class="grid grid-cols-3 gap-2 pt-3 border-t border-gray-800">
-                                <div class="text-center">
-                                  <div class="text-base font-bold text-green-400">${wrongTest.correct}</div>
-                                  <div class="text-xs text-gray-500">맞힘</div>
-                                </div>
-                                <div class="text-center">
-                                  <div class="text-base font-bold text-red-400">${(wrongTest.answeredCount || wrongTest.total) - wrongTest.correct}</div>
-                                  <div class="text-xs text-gray-500">틀림</div>
-                                </div>
-                                <div class="text-center flex items-center justify-center">
-                                  <svg class="w-4 h-4 transform transition-transform ${isWrongExpanded ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                  </svg>
-                                </div>
-                              </div>
-                            </button>
-
-                            ${isWrongExpanded && theme ? `
-                              <div class="border-t border-gray-800 p-4 bg-gray-800/30">
-                                <div class="space-y-3">
-                                  ${[...wrongCorrectQuestions, ...wrongWrongQuestions].map(({ idx, question, answer }) => {
-                                    const isCorrect = answer?.correct;
-                                    return `
-                                      <div class="bg-${isCorrect ? 'green' : 'red'}-900/10 border border-${isCorrect ? 'green' : 'red'}-500/30 rounded-lg p-3">
-                                        <p class="text-xs text-${isCorrect ? 'green' : 'red'}-400 font-semibold mb-1">문제 ${idx + 1}</p>
-                                        <p class="text-xs text-gray-300 mb-2 leading-relaxed">${question.question}</p>
-                                        ${answer?.imageUrl ? `
-                                          <div class="mt-2">
-                                            <p class="text-xs text-blue-400 font-semibold mb-1">✏️ 필기:</p>
-                                            <img src="${answer.imageUrl}" alt="필기" class="w-full rounded border border-gray-700" onerror="this.style.display='none'" />
-                                          </div>
-                                        ` : ''}
-                                        ${wrongTest.teacherNotes?.[idx] ? `
-                                          <div class="mt-2 bg-orange-900/20 border border-orange-500/30 rounded p-2">
-                                            <p class="text-xs text-orange-400 font-semibold mb-1">📝 선생님 메모:</p>
-                                            <p class="text-xs text-gray-300">${wrongTest.teacherNotes[idx]}</p>
-                                          </div>
-                                        ` : ''}
-                                      </div>
-                                    `;
-                                  }).join('')}
-                                </div>
-                              </div>
                             ` : ''}
+
+                            <!-- 각 테스트 상세 정보 -->
+                            <div class="space-y-4">
+                              ${allTestsInDate.map((test, testIdx) => {
+                                const category = categories.find(c => c.id === test.categoryId);
+                                const theme = category?.chapters.find(t => t.id === test.themeId);
+
+                                if (!theme) return '';
+
+                                const testCardId = `admin-test-${groupIdx}-${testIdx}`;
+                                const isTestExpanded = state.expandedAttempts[testCardId];
+
+                                // 문제 분류
+                                const correctQuestions = [];
+                                const wrongQuestions = [];
+                                const answeredQuestions = test.answeredQuestions || Object.keys(test.answers || {}).map(Number);
+
+                                answeredQuestions.forEach(qIdx => {
+                                  const answer = test.answers?.[qIdx];
+                                  const question = theme?.questions[qIdx];
+                                  if (question) {
+                                    if (answer?.correct) {
+                                      correctQuestions.push({ idx: qIdx, question, answer });
+                                    } else {
+                                      wrongQuestions.push({ idx: qIdx, question, answer });
+                                    }
+                                  }
+                                });
+
+                                return `
+                                  <div class="bg-gray-900/50 rounded-xl border border-gray-700 overflow-hidden">
+                                    <button
+                                      class="attempt-card-header w-full text-left p-3 hover:bg-gray-800/30 transition-all"
+                                      data-attempt-id="${testCardId}"
+                                    >
+                                      <div class="flex items-center justify-between">
+                                        <div class="flex-1">
+                                          <div class="flex items-center gap-2 mb-1">
+                                            <h4 class="text-sm font-bold text-white">${test.themeName}</h4>
+                                            <span class="text-xs px-2 py-0.5 rounded ${test.isWrongAnswerTest ? 'bg-purple-500/20 text-purple-400' : 'bg-orange-500/20 text-orange-400'}">
+                                              ${test.isWrongAnswerTest ? '오답테스트' : '구두테스트'}
+                                            </span>
+                                          </div>
+                                          <p class="text-xs text-gray-500">${test.date}</p>
+                                        </div>
+                                        <div class="flex items-center gap-3">
+                                          <div class="text-right">
+                                            <div class="text-lg font-bold ${test.percentage === 100 ? 'text-green-400' : test.percentage >= 80 ? 'text-orange-400' : 'text-red-400'}">
+                                              ${test.percentage}%
+                                            </div>
+                                            <div class="text-xs text-gray-500">${test.correct}/${test.answeredCount || test.total}</div>
+                                          </div>
+                                          <svg class="w-4 h-4 transform transition-transform ${isTestExpanded ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                          </svg>
+                                        </div>
+                                      </div>
+                                    </button>
+
+                                    ${isTestExpanded ? `
+                                      <div class="border-t border-gray-700 p-3 bg-gray-800/20">
+                                        <div class="space-y-2">
+                                          ${[...correctQuestions, ...wrongQuestions].map(({ idx, question, answer }) => {
+                                            const isCorrect = answer?.correct;
+                                            return `
+                                              <div class="bg-${isCorrect ? 'green' : 'red'}-900/10 border border-${isCorrect ? 'green' : 'red'}-500/30 rounded-lg p-2">
+                                                <p class="text-xs text-${isCorrect ? 'green' : 'red'}-400 font-semibold mb-1">문제 ${idx + 1}</p>
+                                                <p class="text-xs text-gray-300 mb-2 leading-relaxed">${question.question}</p>
+                                                ${answer?.imageUrl ? `
+                                                  <div class="mt-2">
+                                                    <p class="text-xs text-blue-400 font-semibold mb-1">✏️ 필기:</p>
+                                                    <img src="${answer.imageUrl}" alt="필기" class="w-full rounded border border-gray-700" onerror="this.style.display='none'" />
+                                                  </div>
+                                                ` : ''}
+                                                ${test.teacherNotes?.[idx] ? `
+                                                  <div class="mt-2 bg-orange-900/20 border border-orange-500/30 rounded p-2">
+                                                    <p class="text-xs text-orange-400 font-semibold mb-1">📝 선생님 메모:</p>
+                                                    <p class="text-xs text-gray-300">${test.teacherNotes[idx]}</p>
+                                                  </div>
+                                                ` : ''}
+                                              </div>
+                                            `;
+                                          }).join('')}
+                                        </div>
+                                      </div>
+                                    ` : ''}
+                                  </div>
+                                `;
+                              }).join('')}
+                            </div>
                           </div>
-                        ` : `
-                          <div class="bg-gray-900/30 rounded-2xl border border-dashed border-gray-700 p-8 flex items-center justify-center">
-                            <p class="text-gray-600 text-sm text-center">
-                              오답테스트 미진행
-                            </p>
-                          </div>
-                        `}
+                        ` : ''}
                       </div>
                     `;
                   }).join('');
@@ -3803,7 +3821,7 @@
       `;
 
       document.getElementById('backBtn').addEventListener('click', () => {
-        state.selectedStudent = null;
+        state.showStudentRecords = false;
         render();
       });
 
@@ -4174,6 +4192,77 @@
         // 학생은 학습 기록만 볼 수 있음 (테스트는 선생님이 진행)
         renderStudentRecordsOnly(app, currentStudentAttempts);
       }
+    }
+
+    function renderAdminCategorySelection(app) {
+      const student = state.selectedStudent;
+
+      app.innerHTML = `
+        <div class="min-h-screen p-6">
+          <div class="max-w-5xl mx-auto">
+            <div class="bg-gray-900 rounded-2xl p-6 mb-8 shadow-xl border border-orange-500/30">
+              <div class="flex items-center mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mr-3">
+                  ${icon('user', 'text-white')}
+                </div>
+                <div class="flex-1">
+                  <h2 class="text-xl font-bold text-white">${student.studentName}</h2>
+                  <p class="text-sm text-gray-400 mt-1">${state.adminName} 선생님</p>
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <button id="recordBtn" class="flex items-center px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold text-white transition-all transform hover:scale-105 active:scale-95">
+                  ${icon('barChart', 'mr-2', 18)}학습 기록 보기
+                </button>
+                <button id="backBtn" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-bold text-white transition-all transform hover:scale-105 active:scale-95 text-sm">
+                  뒤로 가기
+                </button>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              ${categories.map(category => `
+                <button
+                  data-cat="${category.id}"
+                  class="cat-btn bg-gray-900 rounded-2xl p-6 border shadow-xl text-left transition-all transform ${
+                    category.chapters.length > 0
+                      ? 'border-gray-800 hover:shadow-orange-500/20 hover:border-orange-500/50 hover:scale-105 active:scale-95'
+                      : 'border-gray-800 opacity-50 cursor-not-allowed'
+                  }"
+                  ${category.chapters.length === 0 ? 'disabled' : ''}
+                >
+                  <h3 class="text-base font-bold text-white mb-2">${category.name}</h3>
+                  <p class="text-xs text-gray-500 font-semibold">
+                    ${category.chapters.length > 0 ? `${category.chapters.length}개의 테마` : '준비 중'}
+                  </p>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('recordBtn').addEventListener('click', () => {
+        state.showStudentRecords = true;
+        render();
+      });
+
+      document.getElementById('backBtn').addEventListener('click', () => {
+        state.selectedStudent = null;
+        state.showStudentRecords = false;
+        render();
+      });
+
+      document.querySelectorAll('.cat-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const catId = parseInt(btn.dataset.cat);
+          const category = categories.find(c => c.id === catId);
+          if (category.chapters.length > 0) {
+            state.selectedCategory = catId;
+            render();
+          }
+        });
+      });
     }
 
     function renderCategorySelection(app) {
