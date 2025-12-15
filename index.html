@@ -2829,6 +2829,11 @@
       console.log('각 문제 소요 시간:', state.questionTimes);
       console.log('총 소요 시간:', formatTime(totalTime));
 
+      // 오답테스트는 별도의 키로 선생님 메모 저장
+      const noteKey = isWrongTest
+        ? state.currentTheme + '_wrong_' + state.wrongAnswerAttemptId
+        : state.currentTheme;
+
       const attemptData = {
         categoryId: state.selectedCategory,
         categoryName: category.name,
@@ -2844,7 +2849,7 @@
         answers: { ...state.answers },
         totalTime, // 총 소요 시간 (밀리초) - 응답한 문제들의 합
         questionTimes: { ...state.questionTimes }, // 각 문제별 소요 시간
-        teacherNotes: state.teacherNotes[state.currentTheme] || {}, // 선생님 메모
+        teacherNotes: state.teacherNotes[noteKey] || {}, // 선생님 메모
         isWrongAnswerTest: isWrongTest, // 오답테스트 여부
         wrongAnswerAttemptId: isWrongTest ? state.wrongAnswerAttemptId : null // 원본 시도 ID
       };
@@ -4414,7 +4419,12 @@
                         class="w-full p-3 bg-gray-900/50 border border-gray-700 rounded-lg text-sm text-gray-300 focus:border-orange-500 focus:outline-none resize-none"
                         rows="3"
                         placeholder="이 문제에 대한 메모를 입력하세요..."
-                      >${state.teacherNotes[state.currentTheme]?.[state.currentQuestion] || ''}</textarea>
+                      >${(() => {
+                        const noteKey = state.isWrongAnswerTest
+                          ? state.currentTheme + '_wrong_' + state.wrongAnswerAttemptId
+                          : state.currentTheme;
+                        return state.teacherNotes[noteKey]?.[state.currentQuestion] || '';
+                      })()}</textarea>
                     </div>
                   ` : ''}
                 </div>
@@ -4541,10 +4551,15 @@
         const teacherNoteTextarea = document.getElementById(`teacherNote-${state.currentQuestion}`);
         if (teacherNoteTextarea) {
           teacherNoteTextarea.addEventListener('input', (e) => {
-            if (!state.teacherNotes[state.currentTheme]) {
-              state.teacherNotes[state.currentTheme] = {};
+            // 오답테스트는 별도의 키 사용
+            const noteKey = state.isWrongAnswerTest
+              ? state.currentTheme + '_wrong_' + state.wrongAnswerAttemptId
+              : state.currentTheme;
+
+            if (!state.teacherNotes[noteKey]) {
+              state.teacherNotes[noteKey] = {};
             }
-            state.teacherNotes[state.currentTheme][state.currentQuestion] = e.target.value;
+            state.teacherNotes[noteKey][state.currentQuestion] = e.target.value;
           });
         }
       }
