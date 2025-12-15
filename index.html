@@ -3347,24 +3347,25 @@
     }
 
     function renderAdminScreen(app) {
-      // 선생님이 학생의 테스트를 진행 중인 경우
-      if (state.selectedStudent && state.selectedCategory) {
-        if (state.currentTheme === null) {
-          renderThemeSelection(app);
-        } else {
-          renderQuizScreen(app);
-        }
-        return;
-      }
-
       if (state.selectedStudent) {
-        // 학습 기록 보기 모드일 때만 학생 상세 기록 표시
+        // 학습 기록 보기 모드일 때는 우선적으로 학생 상세 기록 표시
         if (state.showStudentRecords) {
           renderAdminStudentDetail(app);
-        } else {
-          // 기본적으로 카테고리 선택 화면 표시
-          renderAdminCategorySelection(app);
+          return;
         }
+
+        // 선생님이 학생의 테스트를 진행 중인 경우
+        if (state.selectedCategory) {
+          if (state.currentTheme === null) {
+            renderThemeSelection(app);
+          } else {
+            renderQuizScreen(app);
+          }
+          return;
+        }
+
+        // 기본적으로 카테고리 선택 화면 표시
+        renderAdminCategorySelection(app);
         return;
       }
 
