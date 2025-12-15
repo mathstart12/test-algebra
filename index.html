@@ -3657,6 +3657,14 @@
                     const totalAnswered = totalCorrect + totalIncorrect;
                     const overallPercentage = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
 
+                    // 총 소요시간 계산 (밀리초 → 분:초)
+                    const totalTimeMs = allTestsInDate.reduce((sum, t) => sum + (t.totalTime || 0), 0);
+                    const totalMinutes = Math.floor(totalTimeMs / 60000);
+                    const totalSeconds = Math.floor((totalTimeMs % 60000) / 1000);
+                    const totalTimeStr = totalMinutes > 0
+                      ? `${totalMinutes}분 ${totalSeconds}초`
+                      : `${totalSeconds}초`;
+
                     const dateCardId = `admin-date-${groupIdx}`;
                     const isExpanded = state.expandedAttempts[dateCardId];
 
@@ -3676,7 +3684,7 @@
                           <div class="flex items-center justify-between mb-4">
                             <div class="flex-1">
                               <h3 class="text-lg font-bold text-white mb-1">${group.date}</h3>
-                              <p class="text-xs text-gray-500">총 ${allTestsInDate.length}개 테스트</p>
+                              <p class="text-xs text-gray-500">총 ${totalAnswered}개 문제 · ${totalTimeStr}</p>
                             </div>
                             <div class="text-3xl font-bold ${overallPercentage === 100 ? 'text-green-400' : overallPercentage >= 80 ? 'text-orange-400' : 'text-red-400'}">
                               ${overallPercentage}%
