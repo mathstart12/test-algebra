@@ -1999,6 +1999,7 @@
       selectedStudent: null, // 관리자가 선택한 학생
       showAdminRegister: false,
       studentStatusFilter: 'active', // 'active' (재원생) 또는 'withdrawn' (퇴원생)
+      showStudentRecords: false, // 학생 학습 기록 보기 모드
       // 학습 기록 전용
       recordSelectedCategory: null, // 학습 기록에서 선택한 카테고리
       expandedAttempts: {}, // 확장된 시도 목록 { attemptId: true/false }
@@ -3350,7 +3351,13 @@
       }
 
       if (state.selectedStudent) {
-        renderAdminStudentDetail(app);
+        // 학습 기록 보기 모드일 때만 학생 상세 기록 표시
+        if (state.showStudentRecords) {
+          renderAdminStudentDetail(app);
+        } else {
+          // 기본적으로 카테고리 선택 화면 표시
+          renderAdminCategorySelection(app);
+        }
         return;
       }
 
@@ -3814,7 +3821,7 @@
       `;
 
       document.getElementById('backBtn').addEventListener('click', () => {
-        state.selectedStudent = null;
+        state.showStudentRecords = false;
         render();
       });
 
@@ -4185,6 +4192,77 @@
         // 학생은 학습 기록만 볼 수 있음 (테스트는 선생님이 진행)
         renderStudentRecordsOnly(app, currentStudentAttempts);
       }
+    }
+
+    function renderAdminCategorySelection(app) {
+      const student = state.selectedStudent;
+
+      app.innerHTML = `
+        <div class="min-h-screen p-6">
+          <div class="max-w-5xl mx-auto">
+            <div class="bg-gray-900 rounded-2xl p-6 mb-8 shadow-xl border border-orange-500/30">
+              <div class="flex items-center mb-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mr-3">
+                  ${icon('user', 'text-white')}
+                </div>
+                <div class="flex-1">
+                  <h2 class="text-xl font-bold text-white">${student.studentName}</h2>
+                  <p class="text-sm text-gray-400 mt-1">${state.adminName} 선생님</p>
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <button id="recordBtn" class="flex items-center px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold text-white transition-all transform hover:scale-105 active:scale-95">
+                  ${icon('barChart', 'mr-2', 18)}학습 기록 보기
+                </button>
+                <button id="backBtn" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-bold text-white transition-all transform hover:scale-105 active:scale-95 text-sm">
+                  뒤로 가기
+                </button>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              ${categories.map(category => `
+                <button
+                  data-cat="${category.id}"
+                  class="cat-btn bg-gray-900 rounded-2xl p-6 border shadow-xl text-left transition-all transform ${
+                    category.chapters.length > 0
+                      ? 'border-gray-800 hover:shadow-orange-500/20 hover:border-orange-500/50 hover:scale-105 active:scale-95'
+                      : 'border-gray-800 opacity-50 cursor-not-allowed'
+                  }"
+                  ${category.chapters.length === 0 ? 'disabled' : ''}
+                >
+                  <h3 class="text-base font-bold text-white mb-2">${category.name}</h3>
+                  <p class="text-xs text-gray-500 font-semibold">
+                    ${category.chapters.length > 0 ? `${category.chapters.length}개의 테마` : '준비 중'}
+                  </p>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('recordBtn').addEventListener('click', () => {
+        state.showStudentRecords = true;
+        render();
+      });
+
+      document.getElementById('backBtn').addEventListener('click', () => {
+        state.selectedStudent = null;
+        state.showStudentRecords = false;
+        render();
+      });
+
+      document.querySelectorAll('.cat-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const catId = parseInt(btn.dataset.cat);
+          const category = categories.find(c => c.id === catId);
+          if (category.chapters.length > 0) {
+            state.selectedCategory = catId;
+            render();
+          }
+        });
+      });
     }
 
     function renderCategorySelection(app) {
