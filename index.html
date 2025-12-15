@@ -2919,7 +2919,14 @@
         state.isWrongAnswerTest = false;
         state.wrongAnswerQuestions = [];
         state.wrongAnswerAttemptId = null;
-        state.showResults = true; // 학습 기록 화면으로
+
+        // 선생님이 진행한 경우 → 학생 상세 기록 화면으로
+        if (state.userType === 'admin' && state.selectedStudent) {
+          state.showStudentRecords = true;
+        } else {
+          // 학생이 진행한 경우 → 학습 기록 화면으로
+          state.showResults = true;
+        }
       }
 
       state.currentTheme = null;
