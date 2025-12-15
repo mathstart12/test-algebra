@@ -2919,7 +2919,14 @@
         state.isWrongAnswerTest = false;
         state.wrongAnswerQuestions = [];
         state.wrongAnswerAttemptId = null;
-        state.showResults = true; // 학습 기록 화면으로
+
+        // 선생님이 진행한 경우 → 학생 상세 기록 화면으로
+        if (state.userType === 'admin' && state.selectedStudent) {
+          state.showStudentRecords = true;
+        } else {
+          // 학생이 진행한 경우 → 학습 기록 화면으로
+          state.showResults = true;
+        }
       }
 
       state.currentTheme = null;
@@ -5035,18 +5042,14 @@
                                 </div>
                               ` : ''}
 
-                              <!-- 오답테스트 버튼 -->
-                              <div class="mt-4">
-                                <button
-                                  class="wrong-answer-test-btn w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-xl font-bold text-white transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-purple-500/30"
-                                  data-attempt-index="${attempts.indexOf(lastAttempt)}"
-                                >
-                                  📝 오답테스트 시작하기
-                                </button>
-                                <p class="text-xs text-gray-500 mt-2 text-center">
-                                  틀린 문제의 유사문제로 구성된 테스트입니다
-                                </p>
-                              </div>
+                              <!-- 오답테스트 안내 메시지 (학생은 시작 불가) -->
+                              ${hasWrongAnswers && !alreadyHasWrongTest ? `
+                                <div class="mt-4 bg-purple-900/20 border border-purple-500/30 rounded-xl p-4">
+                                  <p class="text-sm text-purple-400 text-center font-medium">
+                                    📝 오답테스트는 선생님이 시작해주실 거예요
+                                  </p>
+                                </div>
+                              ` : ''}
                             </div>
                           ` : ''}
 
@@ -5166,40 +5169,6 @@
             state.currentQuestion = 0;
             state.answers = {};
             render();
-          });
-        });
-
-        // 오답테스트 버튼 이벤트 리스너
-        document.querySelectorAll('.wrong-answer-test-btn').forEach(btn => {
-          btn.addEventListener('click', () => {
-            const attemptIndex = parseInt(btn.dataset.attemptIndex);
-            const currentStudentAttempts = state.allStudentData[state.studentName]?.attempts || [];
-
-            // 선택된 카테고리의 시도들 필터링
-            const categoryAttempts = state.recordSelectedCategory
-              ? currentStudentAttempts.filter(a => a.categoryId === state.recordSelectedCategory)
-              : currentStudentAttempts;
-
-            // Theme별로 그룹화하고 최신 시도 찾기
-            const themeGroups = {};
-            categoryAttempts.forEach(attempt => {
-              const key = `${attempt.categoryId}-${attempt.themeId}`;
-              if (!themeGroups[key]) {
-                themeGroups[key] = [];
-              }
-              themeGroups[key].push(attempt);
-            });
-
-            // 각 그룹의 최신 시도들
-            const latestAttempts = Object.values(themeGroups).map(group => {
-              return group.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-            });
-
-            const selectedAttempt = latestAttempts[attemptIndex];
-
-            if (selectedAttempt) {
-              startWrongAnswerTest(selectedAttempt);
-            }
           });
         });
       } else {
