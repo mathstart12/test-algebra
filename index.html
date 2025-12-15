@@ -2511,20 +2511,47 @@
 
     async function saveData(newData, uid = null) {
       const targetUid = uid || state.uid;
-      try {
-        if (navigator.onLine) {
-          await db.collection('oral-test-students').doc(targetUid).set(newData);
-          console.log('온라인 저장 완료');
-        } else {
-          await saveToIndexedDB(newData);
-          console.log('오프라인 임시 저장 완료');
-          alert('오프라인 상태입니다. 온라인 복구 시 자동으로 동기화됩니다.');
+
+      // 온라인 저장 재시도 로직 (최대 3회)
+      const maxRetries = 3;
+      let retryCount = 0;
+      let saveSuccess = false;
+
+      while (retryCount < maxRetries && !saveSuccess) {
+        try {
+          if (navigator.onLine) {
+            await db.collection('oral-test-students').doc(targetUid).set(newData);
+            console.log('온라인 저장 완료 (시도:', retryCount + 1, '/', maxRetries, ')');
+            saveSuccess = true;
+
+            // 선생님이 학생 데이터를 저장한 경우, 학생 목록 다시 로드
+            if (state.userType === 'admin' && uid) {
+              console.log('선생님 학생 목록 다시 로드 중...');
+              await loadAdminStudents(state.adminName);
+              console.log('학생 목록 다시 로드 완료');
+            }
+          } else {
+            await saveToIndexedDB(newData);
+            console.log('오프라인 임시 저장 완료');
+            alert('오프라인 상태입니다. 온라인 복구 시 자동으로 동기화됩니다.');
+            saveSuccess = true; // 로컬 저장 성공
+          }
+        } catch (error) {
+          retryCount++;
+          console.error('데이터 저장 오류 (시도:', retryCount, '/', maxRetries, '):', error);
+
+          if (retryCount >= maxRetries) {
+            // 최대 재시도 횟수 초과 시 로컬 저장
+            await saveToIndexedDB(newData);
+            alert('온라인 저장에 실패했습니다. 데이터를 로컬에 임시 저장했습니다.\n인터넷 연결을 확인해주세요.');
+          } else {
+            // 재시도 전 잠시 대기 (1초)
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
         }
-      } catch (error) {
-        console.error('데이터 저장 오류:', error);
-        await saveToIndexedDB(newData);
-        alert('데이터를 로컬에 임시 저장했습니다.');
       }
+
+      return saveSuccess;
     }
 
     // 관리자 함수
