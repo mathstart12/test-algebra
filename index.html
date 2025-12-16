@@ -2005,10 +2005,11 @@
       // 학습 기록 전용
       recordSelectedCategory: null, // 학습 기록에서 선택한 카테고리
       expandedAttempts: {}, // 확장된 시도 목록 { attemptId: true/false }
-      // 오답테스트 관련
-      isWrongAnswerTest: false, // 오답테스트 모드 여부
-      wrongAnswerQuestions: [], // 오답테스트 문제 목록
-      wrongAnswerAttemptId: null, // 어떤 시도의 오답테스트인지
+      // 구두테스트 재시험 관련
+      isWrongAnswerTest: false, // 구두테스트 재시험 모드 여부
+      wrongAnswerQuestions: [], // 구두테스트 재시험 문제 목록
+      wrongAnswerAttemptId: null, // 어떤 시도의 구두테스트 재시험인지
+      retestRound: null, // 재시험 회차 (1 또는 2)
       // Canvas 관련
       currentCanvas: null,
       penColor: '#000000',
@@ -2287,48 +2288,67 @@
       return `${minutes}분 ${seconds}초`;
     }
 
-    // ===== 오답테스트 관련 함수 =====
-    function generateWrongAnswerTest(attempt) {
-      console.log('=== 오답테스트 생성 시작 ===');
+    // ===== 구두테스트 재시험 관련 함수 =====
+    function generateWrongAnswerTest(attempt, round = 1) {
+      console.log('=== 구두테스트 재시험 생성 시작 ===');
+      console.log('재시험 회차:', round);
       console.log('Attempt:', attempt);
 
       const category = categories.find(c => c.id === attempt.categoryId);
       const theme = category.chapters.find(t => t.id === attempt.themeId);
 
-      const wrongAnswerQuestions = [];
-
-      // 틀린 문제들을 찾아서 유사문제 중 랜덤 1개 선택
+      // 먼저 모든 틀린 문제들을 수집
+      const allWrongQuestions = [];
       theme.questions.forEach((question, qIdx) => {
         const answer = attempt.answers[qIdx];
         // 틀린 문제만 선택
         if (answer && !answer.correct) {
-          // similarQuestions가 있으면 랜덤으로 1개 선택
+          // similarQuestions가 있으면 후보에 추가
           if (question.similarQuestions && question.similarQuestions.length > 0) {
-            const randomIndex = Math.floor(Math.random() * question.similarQuestions.length);
-            const selectedSimilarQuestion = question.similarQuestions[randomIndex];
-
-            wrongAnswerQuestions.push({
+            allWrongQuestions.push({
               originalQuestion: question.question,
               originalQuestionIndex: qIdx,
-              question: selectedSimilarQuestion.question,
-              answer: selectedSimilarQuestion.answer || "",
-              hint: selectedSimilarQuestion.hint || "",
-              explanation: selectedSimilarQuestion.explanation || ""
+              question: question,
+              similarQuestions: question.similarQuestions
             });
           }
         }
       });
 
-      console.log('생성된 오답테스트 문제 수:', wrongAnswerQuestions.length);
-      console.log('오답테스트 문제:', wrongAnswerQuestions);
+      // 틀린 문제들 중에서 랜덤으로 2개만 선택
+      const selectedCount = Math.min(2, allWrongQuestions.length);
+      const selectedWrongQuestions = [];
 
-      return wrongAnswerQuestions;
+      // 무작위로 섞기
+      const shuffled = [...allWrongQuestions].sort(() => Math.random() - 0.5);
+
+      // 선택된 문제들에서 유사문제 랜덤 선택
+      for (let i = 0; i < selectedCount; i++) {
+        const wrongQ = shuffled[i];
+        const randomIndex = Math.floor(Math.random() * wrongQ.similarQuestions.length);
+        const selectedSimilarQuestion = wrongQ.similarQuestions[randomIndex];
+
+        selectedWrongQuestions.push({
+          originalQuestion: wrongQ.originalQuestion,
+          originalQuestionIndex: wrongQ.originalQuestionIndex,
+          question: selectedSimilarQuestion.question,
+          answer: selectedSimilarQuestion.answer || "",
+          hint: selectedSimilarQuestion.hint || "",
+          explanation: selectedSimilarQuestion.explanation || ""
+        });
+      }
+
+      console.log('생성된 구두테스트 재시험 문제 수:', selectedWrongQuestions.length);
+      console.log('구두테스트 재시험 문제:', selectedWrongQuestions);
+
+      return selectedWrongQuestions;
     }
 
-    function startWrongAnswerTest(attempt) {
-      console.log('=== 오답테스트 시작 ===');
+    function startWrongAnswerTest(attempt, round = 1) {
+      console.log('=== 구두테스트 재시험 시작 ===');
+      console.log('재시험 회차:', round);
 
-      const wrongQuestions = generateWrongAnswerTest(attempt);
+      const wrongQuestions = generateWrongAnswerTest(attempt, round);
 
       if (wrongQuestions.length === 0) {
         alert('틀린 문제가 없거나 유사문제가 없습니다.');
@@ -2338,6 +2358,7 @@
       state.isWrongAnswerTest = true;
       state.wrongAnswerQuestions = wrongQuestions;
       state.wrongAnswerAttemptId = attempt.date; // 시도 날짜를 ID로 사용
+      state.retestRound = round; // 재시험 회차 저장
       state.selectedCategory = attempt.categoryId;
       state.currentTheme = attempt.themeId;
       state.currentQuestion = 0;
@@ -2353,8 +2374,9 @@
       // 타이머는 수동으로 시작해야 함
     }
 
-    function startWrongAnswerTestForStudent(attemptDate) {
-      console.log('=== 선생님이 학생 오답테스트 시작 ===', attemptDate);
+    function startWrongAnswerTestForStudent(attemptDate, round = 1) {
+      console.log('=== 선생님이 학생 구두테스트 재시험 시작 ===', attemptDate);
+      console.log('재시험 회차:', round);
 
       if (!state.selectedStudent) {
         console.error('선택된 학생이 없습니다.');
@@ -2393,11 +2415,11 @@
 
       console.log('찾은 시도:', attempt);
 
-      // 학습 기록 모드 해제 (오답테스트 화면 표시를 위해)
+      // 학습 기록 모드 해제 (구두테스트 재시험 화면 표시를 위해)
       state.showStudentRecords = false;
 
       // 기존 startWrongAnswerTest 함수 호출
-      startWrongAnswerTest(attempt);
+      startWrongAnswerTest(attempt, round);
     }
 
     async function uploadCanvasImage(canvas, studentId, questionIndex) {
@@ -2564,6 +2586,15 @@
               console.log('선생님 학생 목록 다시 로드 중...');
               await loadAdminStudents(state.adminName);
               console.log('학생 목록 다시 로드 완료');
+
+              // selectedStudent도 최신 데이터로 업데이트
+              if (state.selectedStudent && state.selectedStudent.id) {
+                const updatedStudent = state.adminStudents.find(s => s.id === state.selectedStudent.id);
+                if (updatedStudent) {
+                  state.selectedStudent = updatedStudent;
+                  console.log('✅ selectedStudent를 최신 데이터로 업데이트:', updatedStudent.attempts?.length, '개의 시도');
+                }
+              }
             }
           } else {
             await saveToIndexedDB(newData);
@@ -2781,8 +2812,9 @@
 
       console.log('🎯 일반 구두테스트 시작 - isWrongAnswerTest를 false로 설정');
       state.isWrongAnswerTest = false; // 일반 테스트임을 명시
-      state.wrongAnswerQuestions = []; // 오답 테스트 관련 상태 초기화
+      state.wrongAnswerQuestions = []; // 재시험 관련 상태 초기화
       state.wrongAnswerAttemptId = null;
+      state.retestRound = null;
 
       state.currentTheme = themeId;
       state.currentQuestion = 0;
@@ -2883,7 +2915,7 @@
       const category = categories.find(c => c.id === state.selectedCategory);
       const theme = category.chapters.find(t => t.id === state.currentTheme);
 
-      // 오답테스트 모드인지 확인
+      // 구두테스트 재시험 모드인지 확인
       const isWrongTest = state.isWrongAnswerTest;
       const questions = isWrongTest ? state.wrongAnswerQuestions : theme.questions;
 
@@ -2907,9 +2939,9 @@
       console.log('각 문제 소요 시간:', state.questionTimes);
       console.log('총 소요 시간:', formatTime(totalTime));
 
-      // 오답테스트는 별도의 키로 선생님 메모 저장
+      // 구두테스트 재시험은 별도의 키로 선생님 메모 저장
       const noteKey = isWrongTest
-        ? state.currentTheme + '_wrong_' + state.wrongAnswerAttemptId
+        ? state.currentTheme + '_retest_' + state.wrongAnswerAttemptId + '_' + (state.retestRound || 1)
         : state.currentTheme;
 
       const attemptData = {
@@ -2928,8 +2960,9 @@
         totalTime, // 총 소요 시간 (밀리초) - 응답한 문제들의 합
         questionTimes: { ...state.questionTimes }, // 각 문제별 소요 시간
         teacherNotes: state.teacherNotes[noteKey] || {}, // 선생님 메모
-        isWrongAnswerTest: isWrongTest, // 오답테스트 여부
-        wrongAnswerAttemptId: isWrongTest ? state.wrongAnswerAttemptId : null // 원본 시도 ID
+        isWrongAnswerTest: isWrongTest, // 구두테스트 재시험 여부
+        wrongAnswerAttemptId: isWrongTest ? state.wrongAnswerAttemptId : null, // 원본 시도 ID
+        retestRound: isWrongTest ? (state.retestRound || 1) : null // 재시험 회차 (1 또는 2)
       };
 
       console.log('저장할 attemptData:', attemptData);
@@ -2947,13 +2980,25 @@
         ? state.selectedStudent.teacherName || state.adminName
         : state.teacherName;
 
+      // 선생님 모드에서는 selectedStudent의 최신 데이터를 사용
+      // 학생 모드에서는 allStudentData 사용
+      const baseData = (state.userType === 'admin' && state.selectedStudent)
+        ? state.selectedStudent
+        : state.allStudentData[targetStudentName];
+
+      console.log('=== 데이터 기반 확인 ===');
+      console.log('baseData:', baseData);
+      console.log('기존 attempts 수:', baseData?.attempts?.length || 0);
+
       const newData = {
-        ...state.allStudentData[targetStudentName],
-        attempts: [...(state.allStudentData[targetStudentName]?.attempts || []), attemptData],
+        ...baseData,
+        attempts: [...(baseData?.attempts || []), attemptData],
         teacherName: targetTeacherName,
         studentName: targetStudentName,
         phone: targetStudentPhone
       };
+
+      console.log('새로운 attempts 수:', newData.attempts.length);
 
       // 선생님 모드에서는 학생의 ID를 보존해야 함
       if (state.userType === 'admin' && state.selectedStudent?.id) {
@@ -3013,11 +3058,12 @@
         state.selectedStudent = newData;
       }
 
-      // 오답테스트 완료 후 학습 기록으로 이동
+      // 구두테스트 재시험 완료 후 학습 기록으로 이동
       if (isWrongTest) {
         state.isWrongAnswerTest = false;
         state.wrongAnswerQuestions = [];
         state.wrongAnswerAttemptId = null;
+        state.retestRound = null;
 
         // 선생님이 진행한 경우 → 학생 상세 기록 화면으로
         if (state.userType === 'admin' && state.selectedStudent) {
@@ -3770,12 +3816,31 @@
                     const dateCardId = `admin-date-${groupIdx}`;
                     const isExpanded = state.expandedAttempts[dateCardId];
 
-                    // 오답테스트가 필요한 구두테스트 찾기 (틀린 문제가 있는 경우)
-                    const testsNeedingWrongAnswerTest = group.regularTests.filter(t => {
+                    // 구두테스트 재시험이 필요한 구두테스트 찾기 (틀린 문제가 있는 경우)
+                    const testsNeedingRetest = group.regularTests.filter(t => {
                       const hasWrongAnswers = (t.answeredCount || t.total) - t.correct > 0;
-                      const alreadyHasWrongTest = group.wrongTests.some(w => w.wrongAnswerAttemptId === t.date);
-                      return hasWrongAnswers && !alreadyHasWrongTest;
-                    });
+                      return hasWrongAnswers;
+                    }).map(t => {
+                      // 이 테스트에 대한 재시험 찾기
+                      const round1 = group.wrongTests.find(w => w.wrongAnswerAttemptId === t.date && w.retestRound === 1);
+                      const round2 = group.wrongTests.find(w => w.wrongAnswerAttemptId === t.date && w.retestRound === 2);
+
+                      let availableRounds = [];
+                      if (!round1) {
+                        // 1회차가 없으면 1회차 시작 가능
+                        availableRounds.push(1);
+                      } else if (round1.percentage < 100 && !round2) {
+                        // 1회차가 100점이 아니고 2회차가 없으면 2회차 시작 가능
+                        availableRounds.push(2);
+                      }
+
+                      return {
+                        ...t,
+                        availableRounds,
+                        round1,
+                        round2
+                      };
+                    }).filter(t => t.availableRounds.length > 0);
 
                     return `
                       <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden">
@@ -3812,19 +3877,20 @@
 
                         ${isExpanded ? `
                           <div class="border-t border-gray-800 p-5 bg-gray-800/30">
-                            <!-- 오답테스트 시작 버튼들 -->
-                            ${testsNeedingWrongAnswerTest.length > 0 ? `
+                            <!-- 구두테스트 재시험 시작 버튼들 -->
+                            ${testsNeedingRetest.length > 0 ? `
                               <div class="mb-6 space-y-2">
-                                <h4 class="text-sm font-bold text-purple-400 mb-3">📝 오답테스트 시작하기</h4>
-                                ${testsNeedingWrongAnswerTest.map(test => {
-                                  return `
+                                <h4 class="text-sm font-bold text-purple-400 mb-3">📝 구두테스트 재시험 시작하기</h4>
+                                ${testsNeedingRetest.map(test => {
+                                  return test.availableRounds.map(round => `
                                     <button
                                       class="start-wrong-answer-test-btn w-full px-4 py-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-xl font-bold text-white transition-all transform hover:scale-105 active:scale-95 shadow-lg text-sm"
                                       data-attempt-date="${test.date}"
+                                      data-round="${round}"
                                     >
-                                      ${test.themeName} 오답테스트 시작
+                                      ${test.themeName} 재시험 ${round}회차 시작 (2문제)
                                     </button>
-                                  `;
+                                  `).join('');
                                 }).join('')}
                               </div>
                             ` : ''}
@@ -3868,7 +3934,7 @@
                                           <div class="flex items-center gap-2 mb-1">
                                             <h4 class="text-sm font-bold text-white">${test.themeName}</h4>
                                             <span class="text-xs px-2 py-0.5 rounded ${test.isWrongAnswerTest ? 'bg-purple-500/20 text-purple-400' : 'bg-orange-500/20 text-orange-400'}">
-                                              ${test.isWrongAnswerTest ? '오답테스트' : '구두테스트'}
+                                              ${test.isWrongAnswerTest ? '재시험' + (test.retestRound ? ` ${test.retestRound}회차` : '') : '구두테스트'}
                                             </span>
                                           </div>
                                           <p class="text-xs text-gray-500">${test.date}</p>
@@ -3935,12 +4001,13 @@
         render();
       });
 
-      // 오답테스트 시작 버튼 이벤트
+      // 구두테스트 재시험 시작 버튼 이벤트
       document.querySelectorAll('.start-wrong-answer-test-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const attemptDate = btn.dataset.attemptDate;
-          console.log('오답테스트 버튼 클릭:', attemptDate);
-          startWrongAnswerTestForStudent(attemptDate);
+          const round = parseInt(btn.dataset.round) || 1;
+          console.log('구두테스트 재시험 버튼 클릭:', attemptDate, '회차:', round);
+          startWrongAnswerTestForStudent(attemptDate, round);
         });
       });
 
@@ -4055,8 +4122,8 @@
             ` : `
               <div class="space-y-6">
                 ${(() => {
-                  // 구두테스트와 오답테스트를 분리
-                  // 똑똑한 필터링: isWrongAnswerTest가 true여도 실제 오답테스트 데이터가 없으면 일반 테스트로 간주
+                  // 구두테스트와 재시험을 분리
+                  // 똑똑한 필터링: isWrongAnswerTest가 true여도 실제 재시험 데이터가 없으면 일반 테스트로 간주
                   const regularTests = sortedAttempts.filter(a => {
                     // 명시적으로 false면 일반 테스트
                     if (!a.isWrongAnswerTest) return true;
@@ -4064,12 +4131,12 @@
                     // isWrongAnswerTest가 true지만 wrongAnswerAttemptId가 없으면 잘못 분류된 일반 테스트
                     const hasWrongAnswerData = a.wrongAnswerAttemptId;
 
-                    // 오답테스트 데이터가 없으면 일반 테스트로 취급
+                    // 재시험 데이터가 없으면 일반 테스트로 취급
                     return !hasWrongAnswerData;
                   });
 
                   const wrongAnswerTests = sortedAttempts.filter(a => {
-                    // isWrongAnswerTest이고 wrongAnswerAttemptId가 있으면 오답테스트
+                    // isWrongAnswerTest이고 wrongAnswerAttemptId가 있으면 재시험
                     return a.isWrongAnswerTest && a.wrongAnswerAttemptId;
                   });
 
@@ -4100,7 +4167,7 @@
 
                       if (!theme) return '';
 
-                      const testType = test.isWrongAnswerTest ? '오답테스트' : '구두테스트';
+                      const testType = test.isWrongAnswerTest ? '재시험' + (test.retestRound ? ` ${test.retestRound}회차` : '') : '구두테스트';
                       const testColor = test.isWrongAnswerTest ? 'purple' : 'orange';
 
                       return `
@@ -4148,7 +4215,7 @@
                   }
 
                   return regularTests.map((regularTest, idx) => {
-                    // 해당 구두테스트의 오답테스트 찾기
+                    // 해당 구두테스트의 재시험 찾기
                     const wrongTest = wrongAnswerTests.find(w => w.wrongAnswerAttemptId === regularTest.date);
 
                     const category = categories.find(c => c.id === regularTest.categoryId);
@@ -4176,7 +4243,7 @@
                       }
                     });
 
-                    // 오답테스트의 맞은/틀린 문제 분류
+                    // 재시험의 맞은/틀린 문제 분류
                     let wrongCorrectQuestions = [];
                     let wrongWrongQuestions = [];
                     if (wrongTest) {
@@ -4264,7 +4331,7 @@
                           ` : ''}
                         </div>
 
-                        <!-- 오답테스트 카드 (있으면 표시, 없으면 빈 공간) -->
+                        <!-- 재시험 카드 (있으면 표시, 없으면 빈 공간) -->
                         ${wrongTest ? `
                           <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden">
                             <button
@@ -4276,7 +4343,7 @@
                                   <div class="flex items-center gap-2 mb-1">
                                     <h3 class="text-sm font-bold text-white">${wrongTest.themeName}</h3>
                                     <span class="text-xs px-2 py-1 rounded bg-purple-500/20 text-purple-400">
-                                      오답테스트
+                                      재시험${wrongTest.retestRound ? ` ${wrongTest.retestRound}회차` : ''}
                                     </span>
                                   </div>
                                   <p class="text-xs text-gray-500">${wrongTest.date}</p>
@@ -4334,7 +4401,7 @@
                         ` : `
                           <div class="bg-gray-900/30 rounded-2xl border border-dashed border-gray-700 p-8 flex items-center justify-center">
                             <p class="text-gray-600 text-sm text-center">
-                              오답테스트 미진행
+                              재시험 미진행
                             </p>
                           </div>
                         `}
@@ -4443,7 +4510,7 @@
       const currentStudentAttempts = state.allStudentData[state.studentName]?.attempts || [];
       console.log('currentStudentAttempts 길이:', currentStudentAttempts.length);
 
-      // 오답테스트 모드일 때는 퀴즈 화면 표시
+      // 구두테스트 재시험 모드일 때는 퀴즈 화면 표시
       if (state.isWrongAnswerTest && state.wrongAnswerQuestions.length > 0) {
         renderQuizScreen(app);
       } else {
@@ -4744,10 +4811,10 @@
         return;
       }
 
-      // 오답테스트 모드인지 확인
+      // 구두테스트 재시험 모드인지 확인
       const isWrongTest = state.isWrongAnswerTest;
       const questions = isWrongTest ? state.wrongAnswerQuestions : theme.questions;
-      const themeName = isWrongTest ? `${theme.name} - 오답테스트` : theme.name;
+      const themeName = isWrongTest ? `${theme.name} - 재시험 ${state.retestRound || 1}회차` : theme.name;
 
       const question = questions[state.currentQuestion];
       const answer = state.answers[state.currentQuestion];
@@ -5018,11 +5085,12 @@
       `;
 
       document.getElementById('backToThemeBtn').addEventListener('click', () => {
-        // 오답테스트 모드 종료
+        // 구두테스트 재시험 모드 종료
         if (state.isWrongAnswerTest) {
           state.isWrongAnswerTest = false;
           state.wrongAnswerQuestions = [];
           state.wrongAnswerAttemptId = null;
+          state.retestRound = null;
           state.showResults = true; // 학습 기록으로 돌아가기
         }
 
@@ -5083,7 +5151,7 @@
         const teacherNoteTextarea = document.getElementById(`teacherNote-${state.currentQuestion}`);
         if (teacherNoteTextarea) {
           teacherNoteTextarea.addEventListener('input', (e) => {
-            // 오답테스트는 별도의 키 사용
+            // 구두테스트 재시험은 별도의 키 사용
             const noteKey = state.isWrongAnswerTest
               ? state.currentTheme + '_wrong_' + state.wrongAnswerAttemptId
               : state.currentTheme;
@@ -5293,11 +5361,11 @@
                                 </div>
                               ` : ''}
 
-                              <!-- 오답테스트 안내 메시지 (학생은 시작 불가) -->
+                              <!-- 구두테스트 재시험 안내 메시지 (학생은 시작 불가) -->
                               ${hasWrongAnswers && !alreadyHasWrongTest ? `
                                 <div class="mt-4 bg-purple-900/20 border border-purple-500/30 rounded-xl p-4">
                                   <p class="text-sm text-purple-400 text-center font-medium">
-                                    📝 오답테스트는 선생님이 시작해주실 거예요
+                                    📝 구두테스트 재시험은 선생님이 시작해주실 거예요
                                   </p>
                                 </div>
                               ` : ''}
@@ -5418,6 +5486,7 @@
             state.isWrongAnswerTest = false; // 일반 테스트임을 명시
             state.wrongAnswerQuestions = [];
             state.wrongAnswerAttemptId = null;
+            state.retestRound = null;
 
             state.showResults = false;
             state.selectedCategory = categoryId;
