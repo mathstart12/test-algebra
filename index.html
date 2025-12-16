@@ -4230,6 +4230,10 @@
                       retestStatus = 'pass1';
                       retestStatusColor = 'bg-green-500/30 text-green-400';
                       retestStatusText = '재시험 1회차 통과';
+                    } else if (wrongTest1 && wrongTest1.percentage < 100 && !wrongTest2) {
+                      retestStatus = 'fail1';
+                      retestStatusColor = 'bg-red-500/30 text-red-400';
+                      retestStatusText = '재시험 1회차 불통과';
                     } else if (wrongTest2 && wrongTest2.percentage === 100) {
                       retestStatus = 'pass2';
                       retestStatusColor = 'bg-green-500/30 text-green-400';
@@ -4314,8 +4318,8 @@
                               <div class="flex-1">
                                 <div class="flex items-center gap-2 mb-1">
                                   <h3 class="text-sm font-bold text-white">${regularTest.themeName}</h3>
-                                  <span class="text-xs px-2 py-1 rounded bg-orange-500/20 text-orange-400">
-                                    구두테스트
+                                  <span class="text-xs px-2 py-1 rounded ${regularTest.percentage >= 80 ? 'bg-green-500/30 text-green-400' : 'bg-red-500/30 text-red-400'} font-bold">
+                                    ${regularTest.percentage >= 80 ? '구두테스트 통과' : '구두테스트 불통과'}
                                   </span>
                                 </div>
                                 <p class="text-xs text-gray-500">${regularTest.date}</p>
@@ -4382,9 +4386,6 @@
                                 <div class="flex-1">
                                   <div class="flex items-center gap-2 mb-1">
                                     <h3 class="text-sm font-bold text-white">${regularTest.themeName}</h3>
-                                    <span class="text-xs px-2 py-1 rounded bg-purple-500/20 text-purple-400">
-                                      재시험
-                                    </span>
                                     ${retestStatusText ? `
                                       <span class="text-xs px-2 py-1 rounded font-bold ${retestStatusColor}">
                                         ${retestStatusText}
