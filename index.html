@@ -4001,6 +4001,9 @@
       console.log('정렬 후 sortedAttempts.length:', sortedAttempts.length);
       console.log('sortedAttempts:', sortedAttempts);
 
+      const hasData = sortedAttempts && sortedAttempts.length > 0;
+      console.log('🔍 hasData 검사:', hasData, '(sortedAttempts.length:', sortedAttempts.length, ')');
+
       app.innerHTML = `
         <div class="min-h-screen p-6">
           <div class="max-w-5xl mx-auto">
@@ -4021,7 +4024,7 @@
               </div>
             </div>
 
-            ${sortedAttempts.length === 0 ? `
+            ${!hasData ? `
               <div class="bg-gray-900 rounded-2xl p-12 text-center border border-gray-800 mb-6">
                 ${icon('barChart', 'mx-auto mb-4 text-gray-600', 48)}
                 <p class="text-gray-400 font-medium mb-2">아직 학습 기록이 없습니다.</p>
