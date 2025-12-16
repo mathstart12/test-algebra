@@ -4066,6 +4066,20 @@
                   const regularTests = sortedAttempts.filter(a => !a.isWrongAnswerTest);
                   const wrongAnswerTests = sortedAttempts.filter(a => a.isWrongAnswerTest);
 
+                  console.log('🔍 필터링 결과:', {
+                    sortedAttempts_length: sortedAttempts.length,
+                    regularTests_length: regularTests.length,
+                    wrongAnswerTests_length: wrongAnswerTests.length
+                  });
+                  console.log('sortedAttempts[0]:', sortedAttempts[0]);
+                  if (sortedAttempts[0]) {
+                    console.log('sortedAttempts[0].isWrongAnswerTest:', sortedAttempts[0].isWrongAnswerTest);
+                  }
+
+                  if (regularTests.length === 0) {
+                    console.log('❌ regularTests가 비어있습니다! 모든 테스트가 오답테스트로 분류됨');
+                  }
+
                   return regularTests.map((regularTest, idx) => {
                     // 해당 구두테스트의 오답테스트 찾기
                     const wrongTest = wrongAnswerTests.find(w => w.wrongAnswerAttemptId === regularTest.date);
