@@ -2769,6 +2769,11 @@
     function handleStartQuiz(themeId) {
       if (isLocked(state.selectedCategory, themeId)) return;
 
+      console.log('🎯 일반 구두테스트 시작 - isWrongAnswerTest를 false로 설정');
+      state.isWrongAnswerTest = false; // 일반 테스트임을 명시
+      state.wrongAnswerQuestions = []; // 오답 테스트 관련 상태 초기화
+      state.wrongAnswerAttemptId = null;
+
       state.currentTheme = themeId;
       state.currentQuestion = 0;
       state.answers = {};
@@ -3932,7 +3937,12 @@
           const categoryId = parseInt(btn.dataset.category);
           const themeId = parseInt(btn.dataset.theme);
 
+          console.log('🎯 일반 구두테스트 시작 (관리자 화면)');
           // 선생님이 학생으로 전환해서 테스트 시작
+          state.isWrongAnswerTest = false; // 일반 테스트임을 명시
+          state.wrongAnswerQuestions = [];
+          state.wrongAnswerAttemptId = null;
+
           state.selectedCategory = categoryId;
           state.currentTheme = themeId;
           state.currentQuestion = 0;
@@ -5346,7 +5356,12 @@
             const categoryId = parseInt(btn.dataset.category);
             const themeId = parseInt(btn.dataset.theme);
 
+            console.log('🎯 재시험 시작 - 일반 테스트');
             // 재시험 시작
+            state.isWrongAnswerTest = false; // 일반 테스트임을 명시
+            state.wrongAnswerQuestions = [];
+            state.wrongAnswerAttemptId = null;
+
             state.showResults = false;
             state.selectedCategory = categoryId;
             state.currentTheme = themeId;
