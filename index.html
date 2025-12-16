@@ -2495,14 +2495,22 @@
         const doc = await db.collection('oral-test-students').doc(id).get();
         if (doc.exists) {
           const studentData = doc.data();
-          state.allStudentData[state.studentName] = studentData;
+          // Firebase에서 가져온 studentName을 사용 (정확한 키 매칭을 위해)
+          const studentName = studentData.studentName || state.studentName;
+          state.allStudentData[studentName] = studentData;
           state.lockTimers = studentData.lockTimers || {};
           // 기존 데이터에서 teacherName 가져오기
           if (!state.teacherName && studentData.teacherName) {
             state.teacherName = studentData.teacherName;
           }
+          // state.studentName도 Firebase의 값으로 업데이트 (일관성 유지)
+          if (studentData.studentName) {
+            state.studentName = studentData.studentName;
+          }
+          console.log('데이터 로드 완료 - studentName:', studentName, 'attempts:', studentData.attempts?.length || 0);
         } else {
-          state.allStudentData[state.studentName] = { 
+          console.log('새 학생 데이터 생성:', state.studentName);
+          state.allStudentData[state.studentName] = {
             attempts: [],
             lockTimers: {},
             teacherName: state.teacherName,
@@ -2512,10 +2520,9 @@
           };
           state.lockTimers = {};
         }
-        console.log('데이터 로드 완료:', state.allStudentData[state.studentName]);
       } catch (error) {
         console.error('데이터 로드 오류:', error);
-        state.allStudentData[state.studentName] = { 
+        state.allStudentData[state.studentName] = {
           attempts: [],
           lockTimers: {},
           teacherName: state.teacherName,
@@ -2946,13 +2953,16 @@
         ? state.selectedStudent.id
         : state.uid;
 
+      console.log('=== 퀴즈 완료 후 데이터 저장 ===');
       console.log('저장 시작 - targetStudentName:', targetStudentName);
       console.log('저장 시작 - saveUid:', saveUid);
+      console.log('저장할 attempts 수:', newData.attempts?.length || 0);
       console.log('저장할 newData:', newData);
 
       await saveData(newData, saveUid);
 
-      console.log('저장 완료!');
+      console.log('Firebase 저장 완료!');
+      console.log('학생 UID:', saveUid, '에 저장됨');
 
       // 선생님이 진행한 경우, selectedStudent 데이터도 업데이트
       if (state.userType === 'admin' && state.selectedStudent) {
@@ -4233,11 +4243,20 @@
 
       // 최신 기록 불러오기 버튼
       document.getElementById('refreshDataBtn').addEventListener('click', async () => {
+        console.log('=== 최신 기록 불러오기 클릭 ===');
+        console.log('현재 state.uid:', state.uid);
+        console.log('현재 state.studentName:', state.studentName);
+        console.log('불러오기 전 attempts 수:', state.allStudentData[state.studentName]?.attempts?.length || 0);
+
         const btn = document.getElementById('refreshDataBtn');
         btn.disabled = true;
         btn.innerHTML = `${icon('refreshCw', 'inline mr-2 animate-spin', 18)}불러오는 중...`;
 
         await loadData(state.uid);
+
+        console.log('불러온 후 attempts 수:', state.allStudentData[state.studentName]?.attempts?.length || 0);
+        console.log('불러온 데이터:', state.allStudentData[state.studentName]);
+
         render();
 
         // 버튼 원래대로 복구 (render()가 다시 호출되므로 필요없지만 명시적으로)
