@@ -4221,6 +4221,25 @@
                     const wrongTest2 = wrongTests.find(w => w.retestRound === 2);
                     const hasRetests = wrongTests.length > 0;
 
+                    // 재시험 상태 계산
+                    let retestStatus = null;
+                    let retestStatusColor = '';
+                    let retestStatusText = '';
+
+                    if (wrongTest1 && wrongTest1.percentage === 100) {
+                      retestStatus = 'pass1';
+                      retestStatusColor = 'bg-green-500/30 text-green-400';
+                      retestStatusText = '재시험 1회차 통과';
+                    } else if (wrongTest2 && wrongTest2.percentage === 100) {
+                      retestStatus = 'pass2';
+                      retestStatusColor = 'bg-green-500/30 text-green-400';
+                      retestStatusText = '재시험 2회차 통과';
+                    } else if (wrongTest2 && wrongTest2.percentage < 100) {
+                      retestStatus = 'fail';
+                      retestStatusColor = 'bg-red-500/30 text-red-400';
+                      retestStatusText = '재시험 불통과';
+                    }
+
                     const category = categories.find(c => c.id === regularTest.categoryId);
                     const theme = category?.chapters.find(t => t.id === regularTest.themeId);
 
@@ -4366,6 +4385,11 @@
                                     <span class="text-xs px-2 py-1 rounded bg-purple-500/20 text-purple-400">
                                       재시험
                                     </span>
+                                    ${retestStatusText ? `
+                                      <span class="text-xs px-2 py-1 rounded font-bold ${retestStatusColor}">
+                                        ${retestStatusText}
+                                      </span>
+                                    ` : ''}
                                   </div>
                                   <p class="text-xs text-gray-500">
                                     ${wrongTest1 ? wrongTest1.date : ''}${wrongTest1 && wrongTest2 ? ', ' : ''}${wrongTest2 ? wrongTest2.date : ''}
@@ -4389,6 +4413,11 @@
                                         <span class="text-xs px-2 py-1 rounded bg-purple-500/30 text-purple-300 font-bold">
                                           재시험 1회차
                                         </span>
+                                        ${wrongTest1.percentage === 100 ? `
+                                          <span class="text-xs px-2 py-1 rounded bg-green-500/30 text-green-400 font-bold">
+                                            통과
+                                          </span>
+                                        ` : ''}
                                         <span class="text-xs text-gray-500">${wrongTest1.date}</span>
                                       </div>
                                       <div class="text-xl font-bold ${wrongTest1.percentage === 100 ? 'text-green-400' : wrongTest1.percentage >= 80 ? 'text-purple-400' : 'text-red-400'}">
@@ -4441,6 +4470,15 @@
                                         <span class="text-xs px-2 py-1 rounded bg-purple-500/30 text-purple-300 font-bold">
                                           재시험 2회차
                                         </span>
+                                        ${wrongTest2.percentage === 100 ? `
+                                          <span class="text-xs px-2 py-1 rounded bg-green-500/30 text-green-400 font-bold">
+                                            통과
+                                          </span>
+                                        ` : `
+                                          <span class="text-xs px-2 py-1 rounded bg-red-500/30 text-red-400 font-bold">
+                                            불통과
+                                          </span>
+                                        `}
                                         <span class="text-xs text-gray-500">${wrongTest2.date}</span>
                                       </div>
                                       <div class="text-xl font-bold ${wrongTest2.percentage === 100 ? 'text-green-400' : wrongTest2.percentage >= 80 ? 'text-purple-400' : 'text-red-400'}">
