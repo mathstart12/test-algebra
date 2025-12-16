@@ -3902,41 +3902,6 @@
                 })()}
               </div>
             `}
-
-            <!-- 구두테스트 선택 섹션 -->
-            <div class="mt-8">
-              <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                ${icon('clipboard', 'text-orange-400', 24)}
-                구두테스트 시작하기
-              </h3>
-
-              <div class="grid md:grid-cols-2 gap-4">
-                ${categories.map(category => {
-                  if (!category.chapters || category.chapters.length === 0) return '';
-
-                  return category.chapters.map((theme, idx) => `
-                    <button
-                      data-category="${category.id}"
-                      data-theme="${theme.id}"
-                      class="start-test-btn bg-gray-900 rounded-xl p-5 border border-gray-800 hover:border-orange-500/50 hover:shadow-orange-500/20 shadow-xl transition-all text-left transform hover:scale-105 active:scale-95"
-                    >
-                      <div class="flex items-start justify-between mb-3">
-                        <div class="flex-1">
-                          <h4 class="text-sm font-bold text-gray-400 mb-1">${category.name}</h4>
-                          <h5 class="text-base font-bold text-white">${theme.name}</h5>
-                        </div>
-                        <div class="text-orange-400">
-                          ${icon('play', '', 24)}
-                        </div>
-                      </div>
-                      <p class="text-xs text-gray-500">
-                        ${theme.questions?.length || 0}문제
-                      </p>
-                    </button>
-                  `).join('');
-                }).join('')}
-              </div>
-            </div>
           </div>
         </div>
       `;
@@ -3944,27 +3909,6 @@
       document.getElementById('backBtn').addEventListener('click', () => {
         state.showStudentRecords = false;
         render();
-      });
-
-      // 구두테스트 시작 버튼 이벤트
-      document.querySelectorAll('.start-test-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const categoryId = parseInt(btn.dataset.category);
-          const themeId = parseInt(btn.dataset.theme);
-
-          console.log('🎯 일반 구두테스트 시작 (관리자 화면)');
-          // 선생님이 학생으로 전환해서 테스트 시작
-          state.isWrongAnswerTest = false; // 일반 테스트임을 명시
-          state.wrongAnswerQuestions = [];
-          state.wrongAnswerAttemptId = null;
-
-          state.selectedCategory = categoryId;
-          state.currentTheme = themeId;
-          state.currentQuestion = 0;
-          state.answers = {};
-
-          render();
-        });
       });
 
       // 오답테스트 시작 버튼 이벤트
@@ -4093,21 +4037,16 @@
                     // 명시적으로 false면 일반 테스트
                     if (!a.isWrongAnswerTest) return true;
 
-                    // isWrongAnswerTest가 true지만 실제 오답테스트 특성이 없으면 잘못 분류된 일반 테스트
-                    const hasWrongAnswerData = a.wrongAnswerAttemptId &&
-                                               a.wrongAnswerQuestions &&
-                                               a.wrongAnswerQuestions.length > 0;
+                    // isWrongAnswerTest가 true지만 wrongAnswerAttemptId가 없으면 잘못 분류된 일반 테스트
+                    const hasWrongAnswerData = a.wrongAnswerAttemptId;
 
                     // 오답테스트 데이터가 없으면 일반 테스트로 취급
                     return !hasWrongAnswerData;
                   });
 
                   const wrongAnswerTests = sortedAttempts.filter(a => {
-                    // 실제 오답테스트 데이터가 있는 것만
-                    return a.isWrongAnswerTest &&
-                           a.wrongAnswerAttemptId &&
-                           a.wrongAnswerQuestions &&
-                           a.wrongAnswerQuestions.length > 0;
+                    // isWrongAnswerTest이고 wrongAnswerAttemptId가 있으면 오답테스트
+                    return a.isWrongAnswerTest && a.wrongAnswerAttemptId;
                   });
 
                   console.log('🔍 똑똑한 필터링 결과:', {
