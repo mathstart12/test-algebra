@@ -4065,6 +4065,60 @@
 
                   if (regularTests.length === 0) {
                     console.log('❌ regularTests가 여전히 비어있습니다!');
+                    console.log('⚠️ 모든 테스트를 표시합니다 (필터링 없음)');
+
+                    // 일반 테스트가 없으면 모든 테스트를 그냥 표시
+                    return sortedAttempts.map((test, idx) => {
+                      const testId = `all-test-${idx}`;
+                      const isExpanded = state.expandedAttempts[testId];
+                      const category = categories.find(c => c.id === test.categoryId);
+                      const theme = category?.chapters.find(t => t.id === test.themeId);
+
+                      if (!theme) return '';
+
+                      const testType = test.isWrongAnswerTest ? '오답테스트' : '구두테스트';
+                      const testColor = test.isWrongAnswerTest ? 'purple' : 'orange';
+
+                      return `
+                        <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden">
+                          <button
+                            class="attempt-card-header w-full text-left p-4 hover:bg-gray-800/50 transition-all"
+                            data-attempt-id="${testId}"
+                          >
+                            <div class="flex items-center justify-between mb-3">
+                              <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                  <h3 class="text-sm font-bold text-white">${test.themeName}</h3>
+                                  <span class="text-xs px-2 py-1 rounded bg-${testColor}-500/20 text-${testColor}-400">
+                                    ${testType}
+                                  </span>
+                                </div>
+                                <p class="text-xs text-gray-500">${test.date}</p>
+                              </div>
+                              <div class="text-2xl font-bold ${test.percentage === 100 ? 'text-green-400' : test.percentage >= 80 ? 'text-orange-400' : 'text-red-400'}">
+                                ${test.percentage}%
+                              </div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-2 pt-3 border-t border-gray-800">
+                              <div class="text-center">
+                                <div class="text-base font-bold text-green-400">${test.correct}</div>
+                                <div class="text-xs text-gray-500">맞힘</div>
+                              </div>
+                              <div class="text-center">
+                                <div class="text-base font-bold text-red-400">${(test.answeredCount || test.total) - test.correct}</div>
+                                <div class="text-xs text-gray-500">틀림</div>
+                              </div>
+                              <div class="text-center flex items-center justify-center">
+                                <svg class="w-4 h-4 transform transition-transform ${isExpanded ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                              </div>
+                            </div>
+                          </button>
+                        </div>
+                      `;
+                    }).join('');
                   } else {
                     console.log('✅ regularTests에', regularTests.length, '개의 테스트가 있습니다');
                   }
