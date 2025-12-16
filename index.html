@@ -4297,7 +4297,13 @@
 
     function renderMainScreen() {
       const app = document.getElementById('app');
+      console.log('=== renderMainScreen 호출 ===');
+      console.log('state.studentName:', state.studentName);
+      console.log('state.allStudentData 키들:', Object.keys(state.allStudentData));
+      console.log('state.allStudentData[state.studentName]:', state.allStudentData[state.studentName]);
+
       const currentStudentAttempts = state.allStudentData[state.studentName]?.attempts || [];
+      console.log('currentStudentAttempts 길이:', currentStudentAttempts.length);
 
       // 오답테스트 모드일 때는 퀴즈 화면 표시
       if (state.isWrongAnswerTest && state.wrongAnswerQuestions.length > 0) {
