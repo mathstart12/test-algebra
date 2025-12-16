@@ -2954,6 +2954,12 @@
       state.allStudentData[targetStudentName] = newData;
 
       // 선생님이 진행한 경우, 학생의 UID로 저장
+      console.log('=== saveUid 결정 ===');
+      console.log('state.userType:', state.userType);
+      console.log('state.selectedStudent:', state.selectedStudent);
+      console.log('state.selectedStudent?.id:', state.selectedStudent?.id);
+      console.log('state.uid:', state.uid);
+
       const saveUid = (state.userType === 'admin' && state.selectedStudent)
         ? state.selectedStudent.id
         : state.uid;
@@ -2963,6 +2969,15 @@
       console.log('저장 시작 - saveUid:', saveUid);
       console.log('저장할 attempts 수:', newData.attempts?.length || 0);
       console.log('저장할 newData:', newData);
+
+      if (!saveUid) {
+        console.error('❌ saveUid가 비어있습니다! 저장할 수 없습니다.');
+        console.error('state.userType:', state.userType);
+        console.error('state.selectedStudent:', state.selectedStudent);
+        console.error('state.uid:', state.uid);
+        alert('저장 오류: 학생 ID를 찾을 수 없습니다.\n선생님 화면에서 학생을 다시 선택해주세요.');
+        return;
+      }
 
       await saveData(newData, saveUid);
 
