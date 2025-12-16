@@ -2955,6 +2955,11 @@
         phone: targetStudentPhone
       };
 
+      // 선생님 모드에서는 학생의 ID를 보존해야 함
+      if (state.userType === 'admin' && state.selectedStudent?.id) {
+        newData.id = state.selectedStudent.id;
+      }
+
       if (percentage < 100) {
         const lockUntil = Date.now() + 60000;
         state.lockTimers[`${targetStudentName}-${state.selectedCategory}-${state.currentTheme}`] = lockUntil;
