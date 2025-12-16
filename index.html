@@ -90,7 +90,9 @@
       xCircle: '<circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>',
       clock: '<path d="M12 6v6l4 2M22 12A10 10 0 1 1 2 12a10 10 0 0 1 20 0Z"/>',
       users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"/>',
-      settings: '<circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m6.36 6.36 4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m6.36-6.36 4.24-4.24"/>'
+      settings: '<circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m6.36 6.36 4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m6.36-6.36 4.24-4.24"/>',
+      refreshCw: '<path d="M23 4v6h-6M1 20v-6h6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>',
+      info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><circle cx="12" cy="8" r=".5"/>'
     };
 
     function icon(type, className = '', size = 24) {
@@ -4213,15 +4215,39 @@
               </div>
             `}
 
-            <div class="mt-6 bg-blue-900/20 border border-blue-500/30 rounded-xl p-4 text-center">
-              <p class="text-blue-400 text-sm font-medium">
+            <div class="mt-6 bg-blue-900/20 border border-blue-500/30 rounded-xl p-4">
+              <p class="text-blue-400 text-sm font-medium text-center">
                 ${icon('info', 'inline mr-2', 18)}구두테스트는 선생님이 진행합니다
               </p>
-              <p class="text-xs text-gray-400 mt-1">선생님께서 테스트를 시작하면 여기에 기록이 남습니다.</p>
+              <p class="text-xs text-gray-400 mt-1 text-center">선생님께서 테스트를 시작하면 여기에 기록이 남습니다.</p>
+              <button
+                id="refreshDataBtn"
+                class="mt-3 w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold text-white transition-all transform hover:scale-105 active:scale-95 text-sm"
+              >
+                ${icon('refreshCw', 'inline mr-2', 18)}최신 기록 불러오기
+              </button>
             </div>
           </div>
         </div>
       `;
+
+      // 최신 기록 불러오기 버튼
+      document.getElementById('refreshDataBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('refreshDataBtn');
+        btn.disabled = true;
+        btn.innerHTML = `${icon('refreshCw', 'inline mr-2 animate-spin', 18)}불러오는 중...`;
+
+        await loadData(state.uid);
+        render();
+
+        // 버튼 원래대로 복구 (render()가 다시 호출되므로 필요없지만 명시적으로)
+        setTimeout(() => {
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `${icon('refreshCw', 'inline mr-2', 18)}최신 기록 불러오기`;
+          }
+        }, 100);
+      });
 
       // 로그아웃 버튼
       document.getElementById('logoutBtn').addEventListener('click', () => {
