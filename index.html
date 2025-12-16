@@ -4073,21 +4073,46 @@
               <div class="space-y-6">
                 ${(() => {
                   // 구두테스트와 오답테스트를 분리
-                  const regularTests = sortedAttempts.filter(a => !a.isWrongAnswerTest);
-                  const wrongAnswerTests = sortedAttempts.filter(a => a.isWrongAnswerTest);
+                  // 똑똑한 필터링: isWrongAnswerTest가 true여도 실제 오답테스트 데이터가 없으면 일반 테스트로 간주
+                  const regularTests = sortedAttempts.filter(a => {
+                    // 명시적으로 false면 일반 테스트
+                    if (!a.isWrongAnswerTest) return true;
 
-                  console.log('🔍 필터링 결과:', {
+                    // isWrongAnswerTest가 true지만 실제 오답테스트 특성이 없으면 잘못 분류된 일반 테스트
+                    const hasWrongAnswerData = a.wrongAnswerAttemptId &&
+                                               a.wrongAnswerQuestions &&
+                                               a.wrongAnswerQuestions.length > 0;
+
+                    // 오답테스트 데이터가 없으면 일반 테스트로 취급
+                    return !hasWrongAnswerData;
+                  });
+
+                  const wrongAnswerTests = sortedAttempts.filter(a => {
+                    // 실제 오답테스트 데이터가 있는 것만
+                    return a.isWrongAnswerTest &&
+                           a.wrongAnswerAttemptId &&
+                           a.wrongAnswerQuestions &&
+                           a.wrongAnswerQuestions.length > 0;
+                  });
+
+                  console.log('🔍 똑똑한 필터링 결과:', {
                     sortedAttempts_length: sortedAttempts.length,
                     regularTests_length: regularTests.length,
                     wrongAnswerTests_length: wrongAnswerTests.length
                   });
-                  console.log('sortedAttempts[0]:', sortedAttempts[0]);
+
                   if (sortedAttempts[0]) {
-                    console.log('sortedAttempts[0].isWrongAnswerTest:', sortedAttempts[0].isWrongAnswerTest);
+                    console.log('sortedAttempts[0] 분석:', {
+                      isWrongAnswerTest: sortedAttempts[0].isWrongAnswerTest,
+                      hasWrongAnswerAttemptId: !!sortedAttempts[0].wrongAnswerAttemptId,
+                      wrongAnswerQuestionsLength: sortedAttempts[0].wrongAnswerQuestions?.length || 0
+                    });
                   }
 
                   if (regularTests.length === 0) {
-                    console.log('❌ regularTests가 비어있습니다! 모든 테스트가 오답테스트로 분류됨');
+                    console.log('❌ regularTests가 여전히 비어있습니다!');
+                  } else {
+                    console.log('✅ regularTests에', regularTests.length, '개의 테스트가 있습니다');
                   }
 
                   return regularTests.map((regularTest, idx) => {
