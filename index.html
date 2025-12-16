@@ -3001,10 +3001,26 @@
 
     // 렌더링 함수
     let isRendering = false;
+    let renderCount = 0;
     function render() {
-      if (isRendering) return;
+      if (isRendering) {
+        console.log('⚠️ render() 차단됨 (이미 렌더링 중)');
+        return;
+      }
       isRendering = true;
-      
+      renderCount++;
+
+      console.log(`\n🔄 ========== render() 호출 #${renderCount} ==========`);
+      console.log('현재 state:', {
+        userType: state.userType,
+        isLoggedIn: state.isLoggedIn,
+        studentName: state.studentName,
+        isWrongAnswerTest: state.isWrongAnswerTest,
+        wrongAnswerQuestions_length: state.wrongAnswerQuestions?.length,
+        showResults: state.showResults,
+        selectedCategory: state.selectedCategory
+      });
+
       const app = document.getElementById('app');
 
       if (state.loading) {
@@ -3035,13 +3051,26 @@
       }
 
       if (state.userType === 'admin') {
+        console.log('→ renderAdminScreen() 호출');
         renderAdminScreen(app);
       } else {
+        console.log('→ renderMainScreen() 호출');
         renderMainScreen();
       }
-      
+
+      console.log(`✅ render() #${renderCount} 완료\n`);
       isRendering = false;
-      
+
+      // 100ms 후에 다시 render가 호출되는지 체크
+      setTimeout(() => {
+        const currentCount = renderCount;
+        setTimeout(() => {
+          if (renderCount > currentCount) {
+            console.log(`⚠️ 경고: render() #${currentCount} 이후 추가 render() 호출됨! (현재: #${renderCount})`);
+          }
+        }, 10);
+      }, 100);
+
       // DOM 업데이트 후 KaTeX 렌더링 (디바운싱 적용됨)
       renderMath();
     }
@@ -4252,31 +4281,49 @@
       `;
 
       // 최신 기록 불러오기 버튼
-      document.getElementById('refreshDataBtn').addEventListener('click', async () => {
-        console.log('=== 최신 기록 불러오기 클릭 ===');
-        console.log('현재 state.uid:', state.uid);
-        console.log('현재 state.studentName:', state.studentName);
-        console.log('불러오기 전 attempts 수:', state.allStudentData[state.studentName]?.attempts?.length || 0);
+      const refreshBtn = document.getElementById('refreshDataBtn');
+      console.log('🔵 refreshDataBtn 요소:', refreshBtn ? '존재함' : '❌ 없음!');
 
-        const btn = document.getElementById('refreshDataBtn');
-        btn.disabled = true;
-        btn.innerHTML = `${icon('refreshCw', 'inline mr-2 animate-spin', 18)}불러오는 중...`;
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', async () => {
+          console.log('\n🔄 ===== 최신 기록 불러오기 버튼 클릭 =====');
+          console.log('클릭 시각:', new Date().toLocaleTimeString());
+          console.log('현재 state.uid:', state.uid);
+          console.log('현재 state.studentName:', state.studentName);
+          console.log('불러오기 전 attempts 수:', state.allStudentData[state.studentName]?.attempts?.length || 0);
+          console.log('불러오기 전 state.isWrongAnswerTest:', state.isWrongAnswerTest);
 
-        await loadData(state.uid);
+          const btn = document.getElementById('refreshDataBtn');
+          btn.disabled = true;
+          btn.innerHTML = `${icon('refreshCw', 'inline mr-2 animate-spin', 18)}불러오는 중...`;
 
-        console.log('불러온 후 attempts 수:', state.allStudentData[state.studentName]?.attempts?.length || 0);
-        console.log('불러온 데이터:', state.allStudentData[state.studentName]);
+          console.log('⏳ loadData() 호출 시작...');
+          await loadData(state.uid);
+          console.log('✅ loadData() 완료');
 
-        render();
+          console.log('불러온 후 attempts 수:', state.allStudentData[state.studentName]?.attempts?.length || 0);
+          console.log('불러온 후 state.isWrongAnswerTest:', state.isWrongAnswerTest);
+          console.log('불러온 데이터:', state.allStudentData[state.studentName]);
 
-        // 버튼 원래대로 복구 (render()가 다시 호출되므로 필요없지만 명시적으로)
-        setTimeout(() => {
-          if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = `${icon('refreshCw', 'inline mr-2', 18)}최신 기록 불러오기`;
-          }
-        }, 100);
-      });
+          console.log('🔄 render() 호출...');
+          render();
+          console.log('===== 최신 기록 불러오기 완료 =====\n');
+        });
+      } else {
+        console.error('❌ refreshDataBtn 요소를 찾을 수 없습니다!');
+      }
+
+      // DOM에 실제로 렌더링된 내용 확인
+      setTimeout(() => {
+        const appElement = document.getElementById('app');
+        const hasNoDataMessage = appElement.innerHTML.includes('아직 학습 기록이 없습니다');
+        const hasTestData = appElement.innerHTML.includes('총') && appElement.innerHTML.includes('개 문제');
+        console.log('📋 DOM 확인:', {
+          hasNoDataMessage,
+          hasTestData,
+          refreshBtnExists: !!document.getElementById('refreshDataBtn')
+        });
+      }, 50);
 
       // 로그아웃 버튼
       document.getElementById('logoutBtn').addEventListener('click', () => {
