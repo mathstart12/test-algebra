@@ -2362,6 +2362,16 @@
         return;
       }
 
+      // 학생 UID를 별도로 저장 (퀴즈 진행 중 state.selectedStudent가 사라지는 것을 방지)
+      state.currentStudentUid = state.selectedStudent.id;
+      state.currentStudentName = state.selectedStudent.studentName;
+      state.currentStudentPhone = state.selectedStudent.phone;
+      console.log('🔒 학생 정보 백업:', {
+        uid: state.currentStudentUid,
+        name: state.currentStudentName,
+        phone: state.currentStudentPhone
+      });
+
       // adminStudents에서 최신 학생 데이터 가져오기
       const latestStudent = state.adminStudents.find(s => s.id === state.selectedStudent.id);
       if (latestStudent) {
@@ -2958,11 +2968,19 @@
       console.log('state.userType:', state.userType);
       console.log('state.selectedStudent:', state.selectedStudent);
       console.log('state.selectedStudent?.id:', state.selectedStudent?.id);
+      console.log('state.currentStudentUid (백업):', state.currentStudentUid);
       console.log('state.uid:', state.uid);
 
-      const saveUid = (state.userType === 'admin' && state.selectedStudent)
-        ? state.selectedStudent.id
-        : state.uid;
+      let saveUid;
+      if (state.userType === 'admin') {
+        // 선생님 모드: selectedStudent 또는 백업된 currentStudentUid 사용
+        saveUid = state.selectedStudent?.id || state.currentStudentUid;
+        console.log('👨‍🏫 선생님 모드 - saveUid:', saveUid);
+      } else {
+        // 학생 모드: state.uid 사용
+        saveUid = state.uid;
+        console.log('👨‍🎓 학생 모드 - saveUid:', saveUid);
+      }
 
       console.log('=== 퀴즈 완료 후 데이터 저장 ===');
       console.log('저장 시작 - targetStudentName:', targetStudentName);
@@ -2974,6 +2992,7 @@
         console.error('❌ saveUid가 비어있습니다! 저장할 수 없습니다.');
         console.error('state.userType:', state.userType);
         console.error('state.selectedStudent:', state.selectedStudent);
+        console.error('state.currentStudentUid:', state.currentStudentUid);
         console.error('state.uid:', state.uid);
         alert('저장 오류: 학생 ID를 찾을 수 없습니다.\n선생님 화면에서 학생을 다시 선택해주세요.');
         return;
