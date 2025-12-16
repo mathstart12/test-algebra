@@ -2019,6 +2019,7 @@
       // 퀴즈 진행 관련
       quizStartTime: null, // 퀴즈 시작 시간
       questionStartTime: null, // 현재 문제 시작 시간
+      questionPausedElapsed: 0, // 일시정지된 경과 시간 (밀리초)
       questionTimes: {}, // 각 문제별 소요 시간 { questionIndex: timeInMs }
       timerInterval: null, // 타이머 인터벌
       teacherNotes: {} // 선생님 메모 { themeId: { questionIndex: "메모 내용" } }
@@ -2209,15 +2210,18 @@
 
     function changePenColor(color) {
       state.penColor = color;
+      render();
     }
 
     function changePenSize(size) {
       state.penSize = size;
+      render();
     }
 
     // ===== 타이머 관련 함수 =====
     function startQuestionTimer() {
-      state.questionStartTime = Date.now();
+      // 일시정지된 시간을 고려하여 시작 시간 설정
+      state.questionStartTime = Date.now() - state.questionPausedElapsed;
 
       // 기존 타이머가 있으면 제거
       if (state.timerInterval) {
@@ -2234,6 +2238,11 @@
       if (state.timerInterval) {
         clearInterval(state.timerInterval);
         state.timerInterval = null;
+
+        // 현재까지 경과한 시간 저장
+        if (state.questionStartTime) {
+          state.questionPausedElapsed = Date.now() - state.questionStartTime;
+        }
       }
     }
 
@@ -2365,6 +2374,7 @@
       state.answers = {};
       state.quizStartTime = Date.now();
       state.questionTimes = {};
+      state.questionPausedElapsed = 0;
       state.canvasStrokes = [];
       state.isEraserMode = false;
       state.showResults = false;
@@ -2821,6 +2831,7 @@
       state.answers = {};
       state.quizStartTime = Date.now(); // 퀴즈 시작 시간 기록
       state.questionTimes = {}; // 문제별 시간 초기화
+      state.questionPausedElapsed = 0; // 일시정지 시간 초기화
       state.canvasStrokes = []; // 캔버스 획 초기화
       state.isEraserMode = false; // 지우개 모드 해제
       stopQuestionTimer(); // 기존 타이머 정리
@@ -2880,6 +2891,7 @@
         state.currentQuestion++;
         state.canvasStrokes = []; // 다음 문제로 이동 시 캔버스 획 초기화
         state.isEraserMode = false; // 지우개 모드 해제
+        state.questionPausedElapsed = 0; // 일시정지 시간 초기화
 
         // 타이머는 수동으로 시작해야 함
         stopQuestionTimer();
@@ -2898,6 +2910,7 @@
         state.currentQuestion--;
         state.canvasStrokes = []; // 이전 문제로 이동 시 캔버스 획 초기화
         state.isEraserMode = false; // 지우개 모드 해제
+        state.questionPausedElapsed = 0; // 일시정지 시간 초기화
 
         // 타이머는 수동으로 시작해야 함
         stopQuestionTimer();
@@ -5272,6 +5285,7 @@
       // Canvas 초기화
       setTimeout(() => {
         initCanvas('drawingCanvas');
+        redrawCanvas(); // 기존 획 복원
       }, 0);
 
       // 선생님 메모 이벤트 리스너 (관리자만)
