@@ -3989,10 +3989,17 @@
     }
 
     function renderStudentRecordsOnly(app, currentStudentAttempts) {
+      console.log('=== renderStudentRecordsOnly 호출 ===');
+      console.log('받은 currentStudentAttempts:', currentStudentAttempts);
+      console.log('currentStudentAttempts.length:', currentStudentAttempts.length);
+
       // 날짜순 정렬 (최신순)
       const sortedAttempts = [...currentStudentAttempts].sort((a, b) =>
         new Date(b.date) - new Date(a.date)
       );
+
+      console.log('정렬 후 sortedAttempts.length:', sortedAttempts.length);
+      console.log('sortedAttempts:', sortedAttempts);
 
       app.innerHTML = `
         <div class="min-h-screen p-6">
