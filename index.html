@@ -4227,7 +4227,39 @@
                     console.log('✅ regularTests에', regularTests.length, '개의 테스트가 있습니다');
                   }
 
-                  return regularTests.map((regularTest, idx) => {
+                  // 날짜별로 그룹화 (YYYY. MM. DD 형식으로)
+                  const groupedByDate = {};
+                  regularTests.forEach(test => {
+                    // "2025. 12. 17. 오전 1:14:10" -> "2025. 12. 17" 추출
+                    const dateParts = test.date.split(' ');
+                    const dateOnly = dateParts[0] + ' ' + dateParts[1] + ' ' + dateParts[2].replace('.', '');
+
+                    if (!groupedByDate[dateOnly]) {
+                      groupedByDate[dateOnly] = [];
+                    }
+                    groupedByDate[dateOnly].push(test);
+                  });
+
+                  // 날짜 키들을 배열로 변환하고 내림차순 정렬 (최신 날짜가 먼저)
+                  const sortedDates = Object.keys(groupedByDate).sort((a, b) => {
+                    const parseDate = (dateStr) => {
+                      const parts = dateStr.split(' ').map(p => parseInt(p.replace('.', '')));
+                      return new Date(parts[0], parts[1] - 1, parts[2]);
+                    };
+                    return parseDate(b) - parseDate(a);
+                  });
+
+                  // 날짜별로 렌더링
+                  return sortedDates.map(dateKey => {
+                    const testsForDate = groupedByDate[dateKey];
+
+                    return `
+                      <div class="mb-8">
+                        <h2 class="text-xl font-bold text-white mb-4 border-b border-gray-700 pb-2">${dateKey}</h2>
+                        <div class="space-y-4">
+                          ${testsForDate.map((regularTest, localIdx) => {
+                            // 전체 배열에서의 인덱스 계산 (ID 충돌 방지)
+                            const idx = regularTests.findIndex(t => t === regularTest);
                     // 해당 구두테스트의 재시험 1회차, 2회차 모두 찾기
                     const wrongTests = wrongAnswerTests.filter(w => w.wrongAnswerAttemptId === regularTest.date);
                     const wrongTest1 = wrongTests.find(w => w.retestRound === 1);
@@ -4330,12 +4362,12 @@
                             <div class="flex items-center justify-between mb-3">
                               <div class="flex-1">
                                 <div class="flex items-center gap-2 mb-1">
-                                  <h3 class="text-sm font-bold text-white">${regularTest.themeName}</h3>
+                                  <h3 class="text-base font-bold text-white">${regularTest.themeName}</h3>
                                   <span class="text-xs px-2 py-1 rounded ${regularTest.percentage >= 80 ? 'bg-green-500/30 text-green-400' : 'bg-red-500/30 text-red-400'} font-bold">
                                     ${regularTest.percentage >= 80 ? '구두테스트 통과' : '구두테스트 불통과'}
                                   </span>
                                 </div>
-                                <p class="text-xs text-gray-500">${regularTest.date}</p>
+                                <p class="text-xs text-gray-500">${regularTest.date.split(' ').slice(3).join(' ')}</p>
                               </div>
                               <div class="text-2xl font-bold ${regularTest.percentage === 100 ? 'text-green-400' : regularTest.percentage >= 80 ? 'text-orange-400' : 'text-red-400'}">
                                 ${regularTest.percentage}%
@@ -4398,7 +4430,7 @@
                               <div class="flex items-center justify-between mb-3">
                                 <div class="flex-1">
                                   <div class="flex items-center gap-2 mb-1">
-                                    <h3 class="text-sm font-bold text-white">${regularTest.themeName}</h3>
+                                    <h3 class="text-base font-bold text-white">${regularTest.themeName}</h3>
                                     ${retestStatusText ? `
                                       <span class="text-xs px-2 py-1 rounded font-bold ${retestStatusColor}">
                                         ${retestStatusText}
@@ -4406,7 +4438,7 @@
                                     ` : ''}
                                   </div>
                                   <p class="text-xs text-gray-500">
-                                    ${wrongTest1 ? wrongTest1.date : ''}${wrongTest1 && wrongTest2 ? ', ' : ''}${wrongTest2 ? wrongTest2.date : ''}
+                                    ${wrongTest1 ? wrongTest1.date.split(' ').slice(3).join(' ') : ''}${wrongTest1 && wrongTest2 ? ', ' : ''}${wrongTest2 ? wrongTest2.date.split(' ').slice(3).join(' ') : ''}
                                   </p>
                                 </div>
                                 <div class="text-center flex items-center justify-center">
@@ -4546,6 +4578,10 @@
                             </p>
                           </div>
                         `}
+                      </div>
+                    `;
+                          }).join('')}
+                        </div>
                       </div>
                     `;
                   }).join('');
