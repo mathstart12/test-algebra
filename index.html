@@ -3934,7 +3934,7 @@
                                           <div class="flex items-center gap-2 mb-1">
                                             <h4 class="text-sm font-bold text-white">${test.themeName}</h4>
                                             <span class="text-xs px-2 py-0.5 rounded ${test.isWrongAnswerTest ? 'bg-purple-500/20 text-purple-400' : 'bg-orange-500/20 text-orange-400'}">
-                                              ${test.isWrongAnswerTest ? '재시험' + (test.retestRound ? ` ${test.retestRound}회차` : '') : '구두테스트'}
+                                              ${test.isWrongAnswerTest ? `재시험 ${test.retestRound || 1}회차` : '구두테스트'}
                                             </span>
                                           </div>
                                           <p class="text-xs text-gray-500">${test.date}</p>
@@ -4167,7 +4167,7 @@
 
                       if (!theme) return '';
 
-                      const testType = test.isWrongAnswerTest ? '재시험' + (test.retestRound ? ` ${test.retestRound}회차` : '') : '구두테스트';
+                      const testType = test.isWrongAnswerTest ? `재시험 ${test.retestRound || 1}회차` : '구두테스트';
                       const testColor = test.isWrongAnswerTest ? 'purple' : 'orange';
 
                       return `
@@ -4215,16 +4215,19 @@
                   }
 
                   return regularTests.map((regularTest, idx) => {
-                    // 해당 구두테스트의 재시험 찾기
-                    const wrongTest = wrongAnswerTests.find(w => w.wrongAnswerAttemptId === regularTest.date);
+                    // 해당 구두테스트의 재시험 1회차, 2회차 모두 찾기
+                    const wrongTests = wrongAnswerTests.filter(w => w.wrongAnswerAttemptId === regularTest.date);
+                    const wrongTest1 = wrongTests.find(w => w.retestRound === 1);
+                    const wrongTest2 = wrongTests.find(w => w.retestRound === 2);
+                    const hasRetests = wrongTests.length > 0;
 
                     const category = categories.find(c => c.id === regularTest.categoryId);
                     const theme = category?.chapters.find(t => t.id === regularTest.themeId);
 
                     const regularAttemptId = `regular-${idx}`;
-                    const wrongAttemptId = `wrong-${idx}`;
+                    const retestsAttemptId = `retests-${idx}`;
                     const isRegularExpanded = state.expandedAttempts[regularAttemptId];
-                    const isWrongExpanded = state.expandedAttempts[wrongAttemptId];
+                    const isRetestsExpanded = state.expandedAttempts[retestsAttemptId];
 
                     // 구두테스트의 맞은/틀린 문제 분류
                     const regularCorrectQuestions = [];
@@ -4243,19 +4246,37 @@
                       }
                     });
 
-                    // 재시험의 맞은/틀린 문제 분류
-                    let wrongCorrectQuestions = [];
-                    let wrongWrongQuestions = [];
-                    if (wrongTest) {
-                      const wrongAnsweredQuestions = wrongTest.answeredQuestions || Object.keys(wrongTest.answers || {}).map(Number);
+                    // 재시험 1회차의 맞은/틀린 문제 분류
+                    let wrongCorrectQuestions1 = [];
+                    let wrongWrongQuestions1 = [];
+                    if (wrongTest1) {
+                      const wrongAnsweredQuestions = wrongTest1.answeredQuestions || Object.keys(wrongTest1.answers || {}).map(Number);
                       wrongAnsweredQuestions.forEach(qIdx => {
-                        const answer = wrongTest.answers?.[qIdx];
+                        const answer = wrongTest1.answers?.[qIdx];
                         const question = theme?.questions[qIdx];
                         if (question) {
                           if (answer?.correct) {
-                            wrongCorrectQuestions.push({ idx: qIdx, question, answer });
+                            wrongCorrectQuestions1.push({ idx: qIdx, question, answer });
                           } else {
-                            wrongWrongQuestions.push({ idx: qIdx, question, answer });
+                            wrongWrongQuestions1.push({ idx: qIdx, question, answer });
+                          }
+                        }
+                      });
+                    }
+
+                    // 재시험 2회차의 맞은/틀린 문제 분류
+                    let wrongCorrectQuestions2 = [];
+                    let wrongWrongQuestions2 = [];
+                    if (wrongTest2) {
+                      const wrongAnsweredQuestions = wrongTest2.answeredQuestions || Object.keys(wrongTest2.answers || {}).map(Number);
+                      wrongAnsweredQuestions.forEach(qIdx => {
+                        const answer = wrongTest2.answers?.[qIdx];
+                        const question = theme?.questions[qIdx];
+                        if (question) {
+                          if (answer?.correct) {
+                            wrongCorrectQuestions2.push({ idx: qIdx, question, answer });
+                          } else {
+                            wrongWrongQuestions2.push({ idx: qIdx, question, answer });
                           }
                         }
                       });
@@ -4331,70 +4352,138 @@
                           ` : ''}
                         </div>
 
-                        <!-- 재시험 카드 (있으면 표시, 없으면 빈 공간) -->
-                        ${wrongTest ? `
+                        <!-- 재시험 카드 (1회차와 2회차를 묶어서 표시) -->
+                        ${hasRetests ? `
                           <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden">
                             <button
                               class="attempt-card-header w-full text-left p-4 hover:bg-gray-800/50 transition-all"
-                              data-attempt-id="${wrongAttemptId}"
+                              data-attempt-id="${retestsAttemptId}"
                             >
                               <div class="flex items-center justify-between mb-3">
                                 <div class="flex-1">
                                   <div class="flex items-center gap-2 mb-1">
-                                    <h3 class="text-sm font-bold text-white">${wrongTest.themeName}</h3>
+                                    <h3 class="text-sm font-bold text-white">${regularTest.themeName}</h3>
                                     <span class="text-xs px-2 py-1 rounded bg-purple-500/20 text-purple-400">
-                                      재시험${wrongTest.retestRound ? ` ${wrongTest.retestRound}회차` : ''}
+                                      재시험
                                     </span>
                                   </div>
-                                  <p class="text-xs text-gray-500">${wrongTest.date}</p>
-                                </div>
-                                <div class="text-2xl font-bold ${wrongTest.percentage === 100 ? 'text-green-400' : wrongTest.percentage >= 80 ? 'text-purple-400' : 'text-red-400'}">
-                                  ${wrongTest.percentage}%
-                                </div>
-                              </div>
-
-                              <div class="grid grid-cols-3 gap-2 pt-3 border-t border-gray-800">
-                                <div class="text-center">
-                                  <div class="text-base font-bold text-green-400">${wrongTest.correct}</div>
-                                  <div class="text-xs text-gray-500">맞힘</div>
-                                </div>
-                                <div class="text-center">
-                                  <div class="text-base font-bold text-red-400">${(wrongTest.answeredCount || wrongTest.total) - wrongTest.correct}</div>
-                                  <div class="text-xs text-gray-500">틀림</div>
+                                  <p class="text-xs text-gray-500">
+                                    ${wrongTest1 ? wrongTest1.date : ''}${wrongTest1 && wrongTest2 ? ', ' : ''}${wrongTest2 ? wrongTest2.date : ''}
+                                  </p>
                                 </div>
                                 <div class="text-center flex items-center justify-center">
-                                  <svg class="w-4 h-4 transform transition-transform ${isWrongExpanded ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <svg class="w-4 h-4 transform transition-transform ${isRetestsExpanded ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                   </svg>
                                 </div>
                               </div>
                             </button>
 
-                            ${isWrongExpanded && theme ? `
-                              <div class="border-t border-gray-800 p-4 bg-gray-800/30">
-                                <div class="space-y-3">
-                                  ${[...wrongCorrectQuestions, ...wrongWrongQuestions].map(({ idx, question, answer }) => {
-                                    const isCorrect = answer?.correct;
-                                    return `
-                                      <div class="bg-${isCorrect ? 'green' : 'red'}-900/10 border border-${isCorrect ? 'green' : 'red'}-500/30 rounded-lg p-3">
-                                        <p class="text-xs text-${isCorrect ? 'green' : 'red'}-400 font-semibold mb-1">문제 ${idx + 1}</p>
-                                        <p class="text-xs text-gray-300 mb-2 leading-relaxed">${question.question}</p>
-                                        ${answer?.imageUrl ? `
-                                          <div class="mt-2">
-                                            <p class="text-xs text-blue-400 font-semibold mb-1">✏️ 필기:</p>
-                                            <img src="${answer.imageUrl}" alt="필기" class="w-full rounded border border-gray-700" onerror="this.style.display='none'" />
-                                          </div>
-                                        ` : ''}
-                                        ${wrongTest.teacherNotes?.[idx] ? `
-                                          <div class="mt-2 bg-orange-900/20 border border-orange-500/30 rounded p-2">
-                                            <p class="text-xs text-orange-400 font-semibold mb-1">📝 선생님 메모:</p>
-                                            <p class="text-xs text-gray-300">${wrongTest.teacherNotes[idx]}</p>
-                                          </div>
-                                        ` : ''}
+                            ${isRetestsExpanded && theme ? `
+                              <div class="border-t border-gray-800 p-4 bg-gray-800/30 space-y-4">
+                                <!-- 재시험 1회차 -->
+                                ${wrongTest1 ? `
+                                  <div class="bg-purple-900/10 rounded-xl border border-purple-500/30 p-3">
+                                    <div class="flex items-center justify-between mb-3">
+                                      <div class="flex items-center gap-2">
+                                        <span class="text-xs px-2 py-1 rounded bg-purple-500/30 text-purple-300 font-bold">
+                                          재시험 1회차
+                                        </span>
+                                        <span class="text-xs text-gray-500">${wrongTest1.date}</span>
                                       </div>
-                                    `;
-                                  }).join('')}
-                                </div>
+                                      <div class="text-xl font-bold ${wrongTest1.percentage === 100 ? 'text-green-400' : wrongTest1.percentage >= 80 ? 'text-purple-400' : 'text-red-400'}">
+                                        ${wrongTest1.percentage}%
+                                      </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-2 gap-2 mb-3">
+                                      <div class="text-center bg-green-900/20 rounded p-2">
+                                        <div class="text-base font-bold text-green-400">${wrongTest1.correct}</div>
+                                        <div class="text-xs text-gray-500">맞힘</div>
+                                      </div>
+                                      <div class="text-center bg-red-900/20 rounded p-2">
+                                        <div class="text-base font-bold text-red-400">${(wrongTest1.answeredCount || wrongTest1.total) - wrongTest1.correct}</div>
+                                        <div class="text-xs text-gray-500">틀림</div>
+                                      </div>
+                                    </div>
+
+                                    <div class="space-y-3">
+                                      ${[...wrongCorrectQuestions1, ...wrongWrongQuestions1].map(({ idx, question, answer }) => {
+                                        const isCorrect = answer?.correct;
+                                        return `
+                                          <div class="bg-${isCorrect ? 'green' : 'red'}-900/10 border border-${isCorrect ? 'green' : 'red'}-500/30 rounded-lg p-3">
+                                            <p class="text-xs text-${isCorrect ? 'green' : 'red'}-400 font-semibold mb-1">문제 ${idx + 1}</p>
+                                            <p class="text-xs text-gray-300 mb-2 leading-relaxed">${question.question}</p>
+                                            ${answer?.imageUrl ? `
+                                              <div class="mt-2">
+                                                <p class="text-xs text-blue-400 font-semibold mb-1">✏️ 필기:</p>
+                                                <img src="${answer.imageUrl}" alt="필기" class="w-full rounded border border-gray-700" onerror="this.style.display='none'" />
+                                              </div>
+                                            ` : ''}
+                                            ${wrongTest1.teacherNotes?.[idx] ? `
+                                              <div class="mt-2 bg-orange-900/20 border border-orange-500/30 rounded p-2">
+                                                <p class="text-xs text-orange-400 font-semibold mb-1">📝 선생님 메모:</p>
+                                                <p class="text-xs text-gray-300">${wrongTest1.teacherNotes[idx]}</p>
+                                              </div>
+                                            ` : ''}
+                                          </div>
+                                        `;
+                                      }).join('')}
+                                    </div>
+                                  </div>
+                                ` : ''}
+
+                                <!-- 재시험 2회차 -->
+                                ${wrongTest2 ? `
+                                  <div class="bg-purple-900/10 rounded-xl border border-purple-500/30 p-3">
+                                    <div class="flex items-center justify-between mb-3">
+                                      <div class="flex items-center gap-2">
+                                        <span class="text-xs px-2 py-1 rounded bg-purple-500/30 text-purple-300 font-bold">
+                                          재시험 2회차
+                                        </span>
+                                        <span class="text-xs text-gray-500">${wrongTest2.date}</span>
+                                      </div>
+                                      <div class="text-xl font-bold ${wrongTest2.percentage === 100 ? 'text-green-400' : wrongTest2.percentage >= 80 ? 'text-purple-400' : 'text-red-400'}">
+                                        ${wrongTest2.percentage}%
+                                      </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-2 gap-2 mb-3">
+                                      <div class="text-center bg-green-900/20 rounded p-2">
+                                        <div class="text-base font-bold text-green-400">${wrongTest2.correct}</div>
+                                        <div class="text-xs text-gray-500">맞힘</div>
+                                      </div>
+                                      <div class="text-center bg-red-900/20 rounded p-2">
+                                        <div class="text-base font-bold text-red-400">${(wrongTest2.answeredCount || wrongTest2.total) - wrongTest2.correct}</div>
+                                        <div class="text-xs text-gray-500">틀림</div>
+                                      </div>
+                                    </div>
+
+                                    <div class="space-y-3">
+                                      ${[...wrongCorrectQuestions2, ...wrongWrongQuestions2].map(({ idx, question, answer }) => {
+                                        const isCorrect = answer?.correct;
+                                        return `
+                                          <div class="bg-${isCorrect ? 'green' : 'red'}-900/10 border border-${isCorrect ? 'green' : 'red'}-500/30 rounded-lg p-3">
+                                            <p class="text-xs text-${isCorrect ? 'green' : 'red'}-400 font-semibold mb-1">문제 ${idx + 1}</p>
+                                            <p class="text-xs text-gray-300 mb-2 leading-relaxed">${question.question}</p>
+                                            ${answer?.imageUrl ? `
+                                              <div class="mt-2">
+                                                <p class="text-xs text-blue-400 font-semibold mb-1">✏️ 필기:</p>
+                                                <img src="${answer.imageUrl}" alt="필기" class="w-full rounded border border-gray-700" onerror="this.style.display='none'" />
+                                              </div>
+                                            ` : ''}
+                                            ${wrongTest2.teacherNotes?.[idx] ? `
+                                              <div class="mt-2 bg-orange-900/20 border border-orange-500/30 rounded p-2">
+                                                <p class="text-xs text-orange-400 font-semibold mb-1">📝 선생님 메모:</p>
+                                                <p class="text-xs text-gray-300">${wrongTest2.teacherNotes[idx]}</p>
+                                              </div>
+                                            ` : ''}
+                                          </div>
+                                        `;
+                                      }).join('')}
+                                    </div>
+                                  </div>
+                                ` : ''}
                               </div>
                             ` : ''}
                           </div>
