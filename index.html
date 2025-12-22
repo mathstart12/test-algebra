@@ -4212,7 +4212,7 @@
                               </div>
                             </div>
 
-                            <div class="grid grid-cols-3 gap-2 pt-3 border-t border-gray-800">
+                            <div class="grid grid-cols-4 gap-2 pt-3 border-t border-gray-800">
                               <div class="text-center">
                                 <div class="text-base font-bold text-green-400">${test.correct}</div>
                                 <div class="text-xs text-gray-500">맞힘</div>
@@ -4220,6 +4220,15 @@
                               <div class="text-center">
                                 <div class="text-base font-bold text-red-400">${(test.answeredCount || test.total) - test.correct}</div>
                                 <div class="text-xs text-gray-500">틀림</div>
+                              </div>
+                              <div class="text-center">
+                                <div class="text-base font-bold text-blue-400">${(() => {
+                                  const totalMs = test.totalTime || 0;
+                                  const mins = Math.floor(totalMs / 60000);
+                                  const secs = Math.floor((totalMs % 60000) / 1000);
+                                  return mins > 0 ? `${mins}분` : `${secs}초`;
+                                })()}</div>
+                                <div class="text-xs text-gray-500">총 시간</div>
                               </div>
                               <div class="text-center flex items-center justify-center">
                                 <svg class="w-4 h-4 transform transition-transform ${isExpanded ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -4382,7 +4391,7 @@
                               </div>
                             </div>
 
-                            <div class="grid grid-cols-3 gap-2 pt-3 border-t border-gray-800">
+                            <div class="grid grid-cols-4 gap-2 pt-3 border-t border-gray-800">
                               <div class="text-center">
                                 <div class="text-base font-bold text-green-400">${regularTest.correct}</div>
                                 <div class="text-xs text-gray-500">맞힘</div>
@@ -4390,6 +4399,15 @@
                               <div class="text-center">
                                 <div class="text-base font-bold text-red-400">${(regularTest.answeredCount || regularTest.total) - regularTest.correct}</div>
                                 <div class="text-xs text-gray-500">틀림</div>
+                              </div>
+                              <div class="text-center">
+                                <div class="text-base font-bold text-blue-400">${(() => {
+                                  const totalMs = regularTest.totalTime || 0;
+                                  const mins = Math.floor(totalMs / 60000);
+                                  const secs = Math.floor((totalMs % 60000) / 1000);
+                                  return mins > 0 ? `${mins}분` : `${secs}초`;
+                                })()}</div>
+                                <div class="text-xs text-gray-500">총 시간</div>
                               </div>
                               <div class="text-center flex items-center justify-center">
                                 <svg class="w-4 h-4 transform transition-transform ${isRegularExpanded ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -4479,7 +4497,7 @@
                                       </div>
                                     </div>
 
-                                    <div class="grid grid-cols-2 gap-2 mb-3">
+                                    <div class="grid grid-cols-3 gap-2 mb-3">
                                       <div class="text-center bg-green-900/20 rounded p-2">
                                         <div class="text-base font-bold text-green-400">${wrongTest1.correct}</div>
                                         <div class="text-xs text-gray-500">맞힘</div>
@@ -4487,6 +4505,15 @@
                                       <div class="text-center bg-red-900/20 rounded p-2">
                                         <div class="text-base font-bold text-red-400">${(wrongTest1.answeredCount || wrongTest1.total) - wrongTest1.correct}</div>
                                         <div class="text-xs text-gray-500">틀림</div>
+                                      </div>
+                                      <div class="text-center bg-blue-900/20 rounded p-2">
+                                        <div class="text-base font-bold text-blue-400">${(() => {
+                                          const totalMs = wrongTest1.totalTime || 0;
+                                          const mins = Math.floor(totalMs / 60000);
+                                          const secs = Math.floor((totalMs % 60000) / 1000);
+                                          return mins > 0 ? `${mins}분` : `${secs}초`;
+                                        })()}</div>
+                                        <div class="text-xs text-gray-500">총 시간</div>
                                       </div>
                                     </div>
 
@@ -4540,7 +4567,7 @@
                                       </div>
                                     </div>
 
-                                    <div class="grid grid-cols-2 gap-2 mb-3">
+                                    <div class="grid grid-cols-3 gap-2 mb-3">
                                       <div class="text-center bg-green-900/20 rounded p-2">
                                         <div class="text-base font-bold text-green-400">${wrongTest2.correct}</div>
                                         <div class="text-xs text-gray-500">맞힘</div>
@@ -4548,6 +4575,15 @@
                                       <div class="text-center bg-red-900/20 rounded p-2">
                                         <div class="text-base font-bold text-red-400">${(wrongTest2.answeredCount || wrongTest2.total) - wrongTest2.correct}</div>
                                         <div class="text-xs text-gray-500">틀림</div>
+                                      </div>
+                                      <div class="text-center bg-blue-900/20 rounded p-2">
+                                        <div class="text-base font-bold text-blue-400">${(() => {
+                                          const totalMs = wrongTest2.totalTime || 0;
+                                          const mins = Math.floor(totalMs / 60000);
+                                          const secs = Math.floor((totalMs % 60000) / 1000);
+                                          return mins > 0 ? `${mins}분` : `${secs}초`;
+                                        })()}</div>
+                                        <div class="text-xs text-gray-500">총 시간</div>
                                       </div>
                                     </div>
 
