@@ -2022,7 +2022,8 @@
       questionPausedElapsed: 0, // 일시정지된 경과 시간 (밀리초)
       questionTimes: {}, // 각 문제별 소요 시간 { questionIndex: timeInMs }
       timerInterval: null, // 타이머 인터벌
-      teacherNotes: {} // 선생님 메모 { themeId: { questionIndex: "메모 내용" } }
+      teacherNotes: {}, // 선생님 메모 { themeId: { questionIndex: "메모 내용" } }
+      quizCompleted: false // 퀴즈 완료 여부 (결과 저장 후 답변 변경 방지)
     };
 
     // ===== Canvas 드로잉 관련 함수 =====
@@ -2848,8 +2849,15 @@
     }
 
     async function handleAnswer(selectedAnswer) {
+      // 퀴즈 완료 후에는 답변 변경 불가
+      if (state.quizCompleted) {
+        return;
+      }
+
       const key = state.currentQuestion;
-      if (state.answers[key]) return;
+
+      // 기존 답변이 있는 경우, 이미지 URL 보존
+      const existingImageUrl = state.answers[key]?.imageUrl || null;
 
       const category = categories.find(c => c.id === state.selectedCategory);
       const theme = category.chapters.find(t => t.id === state.currentTheme);
@@ -2860,9 +2868,9 @@
       const status = getThemeStatus(state.selectedCategory, state.currentTheme);
       const isRetake = status.attemptCount >= 1;
 
-      // Canvas 이미지 업로드 (있는 경우)
-      let imageUrl = null;
-      if (state.currentCanvas) {
+      // Canvas 이미지 업로드 (있는 경우, 새로 그린 경우만)
+      let imageUrl = existingImageUrl;
+      if (state.currentCanvas && state.canvasStrokes.length > 0) {
         try {
           imageUrl = await uploadCanvasImage(
             state.currentCanvas,
@@ -2875,8 +2883,10 @@
         }
       }
 
-      // 문제 시간 저장 (답변할 때만)
-      saveQuestionTime(key);
+      // 문제 시간 저장 (처음 답변할 때만)
+      if (!state.answers[key]) {
+        saveQuestionTime(key);
+      }
 
       state.answers[key] = {
         selected: selectedAnswer,
@@ -2900,6 +2910,7 @@
         state.canvasStrokes = []; // 다음 문제로 이동 시 캔버스 획 초기화
         state.isEraserMode = false; // 지우개 모드 해제
         state.questionPausedElapsed = 0; // 일시정지 시간 초기화
+        state.questionStartTime = null; // 타이머 시작 시간 초기화
 
         // 타이머는 수동으로 시작해야 함
         stopQuestionTimer();
@@ -2919,6 +2930,7 @@
         state.canvasStrokes = []; // 이전 문제로 이동 시 캔버스 획 초기화
         state.isEraserMode = false; // 지우개 모드 해제
         state.questionPausedElapsed = 0; // 일시정지 시간 초기화
+        state.questionStartTime = null; // 타이머 시작 시간 초기화
 
         // 타이머는 수동으로 시작해야 함
         stopQuestionTimer();
@@ -2929,6 +2941,9 @@
 
     async function handleFinishQuiz() {
       console.log('=== handleFinishQuiz 시작 ===');
+
+      // 퀴즈 완료 플래그 설정 (답변 변경 방지)
+      state.quizCompleted = true;
 
       // 타이머 정리
       stopQuestionTimer();
@@ -3101,6 +3116,7 @@
       state.answers = {};
       state.quizStartTime = null;
       state.questionTimes = {}; // 문제별 시간 초기화
+      state.quizCompleted = false; // 퀴즈 완료 플래그 초기화
 
       if (!isWrongTest) {
         state.selectedCategory = null;
@@ -5189,27 +5205,43 @@
 
               <div class="flex gap-3 mb-6">
                 ${['O', 'X'].map(opt => {
-                  let btnClass = 'flex-1 py-4 px-6 rounded-xl font-bold text-2xl transition-all transform ';
-                  
-                  if (!answer) {
-                    btnClass += 'bg-gray-800 hover:bg-gray-700 border-2 border-gray-700 text-white hover:scale-105 active:scale-95 cursor-pointer';
-                  } else {
-                    if (answer.selected === opt) {
-                      if (answer.correct) {
-                        btnClass += 'bg-gradient-to-r from-green-500 to-green-600 border-2 border-green-400 text-white shadow-lg shadow-green-500/50';
-                      } else {
-                        btnClass += 'bg-gradient-to-r from-red-500 to-red-600 border-2 border-red-400 text-white shadow-lg shadow-red-500/50';
-                      }
-                    } else if (question.answer === opt) {
-                      btnClass += 'bg-gradient-to-r from-green-500 to-green-600 border-2 border-green-400 text-white shadow-lg shadow-green-500/50';
+                  let btnClass = 'flex-1 py-4 px-6 rounded-xl font-bold text-2xl transition-all ';
+
+                  if (state.quizCompleted) {
+                    // 퀴즈 완료 후에는 버튼 비활성화
+                    btnClass += 'cursor-not-allowed opacity-50 ';
+                    if (!answer) {
+                      btnClass += 'bg-gray-800 border-2 border-gray-700 text-gray-400';
                     } else {
-                      btnClass += 'bg-gray-800/30 border-2 border-gray-700 opacity-40 text-gray-600';
+                      if (answer.selected === opt) {
+                        if (answer.correct) {
+                          btnClass += 'bg-gradient-to-r from-green-500 to-green-600 border-2 border-green-400 text-white';
+                        } else {
+                          btnClass += 'bg-gradient-to-r from-red-500 to-red-600 border-2 border-red-400 text-white';
+                        }
+                      } else {
+                        btnClass += 'bg-gray-800 border-2 border-gray-700 text-gray-400';
+                      }
                     }
-                    btnClass += ' cursor-not-allowed';
+                  } else {
+                    btnClass += 'transform hover:scale-105 active:scale-95 cursor-pointer ';
+                    if (!answer) {
+                      btnClass += 'bg-gray-800 hover:bg-gray-700 border-2 border-gray-700 text-white';
+                    } else {
+                      if (answer.selected === opt) {
+                        if (answer.correct) {
+                          btnClass += 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 border-2 border-green-400 text-white shadow-lg shadow-green-500/50';
+                        } else {
+                          btnClass += 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 border-2 border-red-400 text-white shadow-lg shadow-red-500/50';
+                        }
+                      } else {
+                        btnClass += 'bg-gray-800 hover:bg-gray-700 border-2 border-gray-700 text-white';
+                      }
+                    }
                   }
 
                   return `
-                    <button data-answer="${opt}" class="answer-btn ${btnClass}">
+                    <button data-answer="${opt}" class="answer-btn ${btnClass}" ${state.quizCompleted ? 'disabled' : ''}>
                       ${answer?.selected === opt ? (answer.correct ? icon('checkCircle', 'inline mr-2', 22) : icon('xCircle', 'inline mr-2', 22)) : ''}
                       ${opt}
                     </button>
@@ -5252,24 +5284,24 @@
             </div>
 
             <div class="flex gap-3">
-              <button id="prevBtn" class="flex items-center px-5 py-3 bg-gray-800 hover:bg-gray-700 disabled:bg-gray-800/30 disabled:cursor-not-allowed rounded-xl font-bold transition-all border border-gray-700 disabled:border-gray-800 text-white disabled:text-gray-600 text-sm transform hover:scale-105 active:scale-95 disabled:scale-100" ${state.currentQuestion === 0 ? 'disabled' : ''}>
-                ${icon('chevronLeft', 'mr-1', 18)}이전
+              <button id="prevBtn" class="flex items-center px-8 py-4 bg-gray-800 hover:bg-gray-700 disabled:bg-gray-800/30 disabled:cursor-not-allowed rounded-xl font-bold transition-all border border-gray-700 disabled:border-gray-800 text-white disabled:text-gray-600 text-base transform hover:scale-105 active:scale-95 disabled:scale-100" ${state.currentQuestion === 0 ? 'disabled' : ''}>
+                ${icon('chevronLeft', 'mr-1', 20)}이전
               </button>
 
-              <button id="nextBtn" class="flex items-center justify-center px-5 py-3 rounded-xl font-bold transition-all text-sm transform ${
+              <button id="nextBtn" class="flex items-center justify-center px-8 py-4 rounded-xl font-bold transition-all text-base transform ${
                 state.currentQuestion < questions.length - 1
                   ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105 active:scale-95'
                   : 'bg-gray-800/30 cursor-not-allowed border border-gray-700 text-gray-600 scale-100'
               }" ${state.currentQuestion >= questions.length - 1 ? 'disabled' : ''}>
-                다음${icon('chevronRight', 'ml-1', 18)}
+                다음${icon('chevronRight', 'ml-1', 20)}
               </button>
 
-              <button id="finishBtn" class="flex-1 px-5 py-3 rounded-xl font-bold transition-all text-sm transform ${
+              <button id="finishBtn" class="px-4 py-2 rounded-xl font-bold transition-all text-xs transform ${
                 isComplete
                   ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/30 hover:scale-105 active:scale-95'
                   : 'bg-gray-800/30 cursor-not-allowed border border-gray-700 text-gray-600 scale-100'
               }" ${!isComplete ? 'disabled' : ''}>
-                ${isComplete ? `결과 저장하고 완료 (${answeredCount}/${questions.length})` : '최소 1문제 이상 풀어주세요'}
+                ${isComplete ? `완료 (${answeredCount}/${questions.length})` : '최소 1문제 이상'}
               </button>
             </div>
 
@@ -5354,13 +5386,12 @@
         });
       }
 
-      if (!answer) {
-        document.querySelectorAll('.answer-btn').forEach(btn => {
-          btn.addEventListener('click', () => {
-            handleAnswer(btn.dataset.answer);
-          });
+      // O, X 버튼 이벤트 (퀴즈 완료 후에는 handleAnswer에서 차단됨)
+      document.querySelectorAll('.answer-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          handleAnswer(btn.dataset.answer);
         });
-      }
+      });
 
       // Canvas 초기화
       setTimeout(() => {
