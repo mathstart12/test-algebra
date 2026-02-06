@@ -5434,15 +5434,16 @@
                   <p class="font-bold text-sm mb-2" style="color: ${answer.correct ? '#4ade80' : '#f87171'}">
                     ${answer.correct ? '✓ 정답입니다!' : '✗ 오답입니다.'}
                   </p>
-                ${answer.correct ? `
+                ${answer.correct && question.explanation ? `
                   <p class="text-sm text-gray-300 leading-relaxed font-medium">
                     <span class="text-green-400 font-bold">해설:</span> ${question.explanation}
                   </p>
-                ` : `
+                ` : ''}
+                ${!answer.correct && question.hint ? `
                   <p class="text-sm text-gray-300 leading-relaxed font-medium">
                     <span class="text-orange-400 font-bold">💡 힌트:</span> ${question.hint}
                   </p>
-                `}
+                ` : ''}
                   ${state.userType === 'admin' ? `
                     <div class="mt-4 pt-4 border-t border-gray-700">
                       <label class="text-sm text-gray-300 font-bold mb-2 block">📝 선생님 메모:</label>
@@ -5773,15 +5774,16 @@
                                   return `
                                     <div class="text-sm bg-gray-900/50 rounded-lg p-3 border border-red-500/20">
                                       <p class="text-red-300 font-medium mb-2 leading-relaxed">• ${wrongQ}</p>
-                                      ${isRetakeAvailable ? `
+                                      ${isRetakeAvailable && questionData?.hint ? `
                                         <p class="text-gray-400 text-xs leading-relaxed">
-                                          <span class="text-orange-400 font-bold">💡 힌트:</span> ${questionData?.hint}
+                                          <span class="text-orange-400 font-bold">💡 힌트:</span> ${questionData.hint}
                                         </p>
-                                      ` : `
+                                      ` : ''}
+                                      ${!isRetakeAvailable && questionData?.explanation ? `
                                         <p class="text-gray-400 text-xs leading-relaxed">
-                                          <span class="text-green-400 font-bold">해설:</span> ${questionData?.explanation}
+                                          <span class="text-green-400 font-bold">해설:</span> ${questionData.explanation}
                                         </p>
-                                      `}
+                                      ` : ''}
                                     </div>
                                   `;
                                 }).join('')}
