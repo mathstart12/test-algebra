@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ox-quiz-v2';
+const CACHE_NAME = 'ox-quiz-v3';
 const urlsToCache = [
   '/',
   '/index.html',
